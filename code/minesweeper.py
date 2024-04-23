@@ -8,8 +8,8 @@ class Minesweeper:
         self.width = width
         self.height = height
         self.total_mines = mines
-        self.total_uncovered = 0
         self.mines = set()
+        self.remaining_cells = set()
         self.user_board = [["?" for _ in range(width)] for _ in range(height)]
         self.mine_board = [[0 for _ in range(width)] for _ in range(height)]
 
@@ -24,18 +24,21 @@ class Minesweeper:
                     safe_zone.add((nx, ny))
         self.mine_board[first_cell[0]][first_cell[1]] = 0
 
-        all_cells = set((x, y) for x in range(self.height) for y in range(self.width))
+        all_cells = set(
+            (row, col) for row in range(self.height) for col in range(self.width)
+        )
         mineable_cells = list(all_cells - safe_zone)
         self.mines = set(random.sample(mineable_cells, self.total_mines))
+        self.remaining_cells = all_cells - self.mines
         self.initialize_mine_board()
 
     def initialize_mine_board(self):
         for mine in self.mines:
-            x, y = mine
-            self.mine_board[x][y] = -1
+            row, col = mine
+            self.mine_board[row][col] = -1
             for dx in range(-1, 2):
                 for dy in range(-1, 2):
-                    nx, ny = x + dx, y + dy
+                    nx, ny = row + dx, col + dy
                     if (
                         nx in range(self.height)
                         and ny in range(self.width)
@@ -44,49 +47,57 @@ class Minesweeper:
                         self.mine_board[nx][ny] += 1
 
     def print_board(self, reveal=False):
-        for x in range(self.height):
-            for y in range(self.width):
+        for row in range(self.height):
+            for col in range(self.width):
                 print(
                     (
-                        self.user_board[x][y]
+                        self.user_board[row][col]
                         if not reveal
                         else (
-                            self.mine_board[x][y]
-                            if self.mine_board[x][y] != -1
+                            self.mine_board[row][col]
+                            if self.mine_board[row][col] != -1
                             else "M"
                         )
                     ),
                     end=" ",
                 )
-            print("\n")
+            print()
 
     def uncover(self, cell: Tuple[int, int]):
-        x, y = cell
-        if x not in range(self.height) or y not in range(self.width):
+        row, col = cell
+        if row not in range(self.height) or col not in range(self.width):
             return GameResult.OUT_OF_BOUNDS
-        if self.user_board[x][y] != "?":
+        if self.user_board[row][col] != "?":
             return GameResult.ALREADY_UNCOVERED
-        if self.mine_board[x][y] == -1:
-            self.user_board[x][y] = "M"
+        if self.mine_board[row][col] == -1:
+            self.user_board[row][col] = "M"
             return GameResult.MINE
 
-        self.open_adjacent_cells(x, y)
+        self.open_adjacent_cells(row, col)
+
+        if not self.remaining_cells:
+            return GameResult.WIN
+
+        print(f"Remaining cells: {len(self.remaining_cells)}")
         return GameResult.OK
 
-    def open_adjacent_cells(self, x, y):
-        if x not in range(self.height) or y not in range(self.width):
+    def open_adjacent_cells(self, row, col):
+        if row not in range(self.height) or col not in range(self.width):
             return
-        if self.mine_board[x][y] == -1 or self.user_board[x][y] != "?":
+        if self.mine_board[row][col] == -1 or self.user_board[row][col] != "?":
             return
 
-        self.total_uncovered += 1
-        self.user_board[x][y] = str(self.mine_board[x][y])
-        if self.mine_board[x][y] == 0:
+        self.user_board[row][col] = str(self.mine_board[row][col])
+        self.remaining_cells.remove((row, col))
+
+        if self.mine_board[row][col] == 0:
             for dx in range(-1, 2):
                 for dy in range(-1, 2):
-                    self.open_adjacent_cells(x + dx, y + dy)
+                    self.open_adjacent_cells(row + dx, col + dy)
 
     def play_turn(self, cell: Tuple[int, int]) -> GameResult:
+        """Plays a single turn of Minesweeper."""
+
         if len(self.mines) == 0:
             self.place_mines(cell)
 
@@ -98,8 +109,7 @@ class Minesweeper:
         elif result == GameResult.MINE:
             print("Game Over!")
             self.print_board(reveal=True)
-
-        if self.total_uncovered == self.width * self.height - len(self.mines):
+        elif result == GameResult.WIN:
             print("You win!")
             self.print_board(reveal=False)
 
@@ -108,7 +118,7 @@ class Minesweeper:
     def play_interactive(self):
         while True:
             self.print_board()
-            action = input("Enter 'u x y' to uncover or 'q' to quit: ")
+            action = input("Enter 'u row col' to uncover or 'q' to quit: ")
 
             if action == "q":
                 break
@@ -116,9 +126,9 @@ class Minesweeper:
                 print("Invalid action. Please try again.")
                 continue
 
-            _, x, y = action.split()
-            result = self.play_turn((int(x), int(y)))
-            if result == GameResult.MINE:
+            _, row, col = action.split()
+            result = self.play_turn((int(row), int(col)))
+            if result == GameResult.MINE or result == GameResult.WIN:
                 break
 
 

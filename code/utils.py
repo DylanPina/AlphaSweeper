@@ -6,3 +6,4 @@ class GameResult(Enum):
     ALREADY_UNCOVERED = auto()
     MINE = auto()
     OK = auto()
+    WIN = auto()
