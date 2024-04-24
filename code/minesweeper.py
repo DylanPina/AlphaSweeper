@@ -1,3 +1,4 @@
+import logging
 import random
 from typing import Tuple
 from utils import GameResult
@@ -47,21 +48,22 @@ class Minesweeper:
                         self.mine_board[nx][ny] += 1
 
     def print_board(self, reveal=False):
+        board_string = ""
         for row in range(self.height):
+            board_row = []
             for col in range(self.width):
-                print(
-                    (
-                        self.user_board[row][col]
-                        if not reveal
-                        else (
-                            self.mine_board[row][col]
-                            if self.mine_board[row][col] != -1
-                            else "M"
-                        )
-                    ),
-                    end=" ",
+                cell_display = (
+                    self.user_board[row][col]
+                    if not reveal
+                    else (
+                        self.mine_board[row][col]
+                        if self.mine_board[row][col] != -1
+                        else "M"
+                    )
                 )
-            print()
+                board_row.append(str(cell_display))
+            board_string += "\n" if row == 0 else "" + " ".join(board_row) + "\n"
+        logging.info(board_string)
 
     def uncover(self, cell: Tuple[int, int]):
         row, col = cell
@@ -78,7 +80,7 @@ class Minesweeper:
         if not self.remaining_cells:
             return GameResult.WIN
 
-        print(f"Remaining cells: {len(self.remaining_cells)}")
+        logging.info(f"Remaining cells: {len(self.remaining_cells)}")
         return GameResult.OK
 
     def open_adjacent_cells(self, row, col):
@@ -103,14 +105,14 @@ class Minesweeper:
 
         result = self.uncover(cell)
         if result == GameResult.OUT_OF_BOUNDS:
-            print("That cell is out of bounds. Please try again.")
+            logging.info("That cell is out of bounds. Please try again.")
         elif result == GameResult.ALREADY_UNCOVERED:
-            print("That cell is already uncovered. Please try again.")
+            logging.info("That cell is already uncovered. Please try again.")
         elif result == GameResult.MINE:
-            print("Game Over!")
+            logging.info("Game Over!")
             self.print_board(reveal=True)
         elif result == GameResult.WIN:
-            print("You win!")
+            logging.info("You win!")
             self.print_board(reveal=False)
 
         return result
@@ -123,7 +125,7 @@ class Minesweeper:
             if action == "q":
                 break
             elif not action.startswith("u "):
-                print("Invalid action. Please try again.")
+                logging.info("Invalid action. Please try again.")
                 continue
 
             _, row, col = action.split()

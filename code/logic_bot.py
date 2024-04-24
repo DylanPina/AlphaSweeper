@@ -1,7 +1,8 @@
-from utils import GameResult
-from minesweeper import Minesweeper
+import logging
 from typing import Tuple
 import random
+from minesweeper import Minesweeper
+from utils import GameResult
 
 
 class MinesweeperBot:
@@ -13,25 +14,21 @@ class MinesweeperBot:
         self.inferred_mines: set = set()
         self.clues: dict = {}
         self.first_move = True
+        self.moves: dict = {}
 
     def select_cell(self) -> Tuple[int, int]:
         """Selects a cell to uncover, preferring safe cells, then random."""
 
-        if self.first_move:
-            self.first_move = False
+        if not self.moves:
             return random.choice(
                 [(x, y) for x in range(self.width) for y in range(self.height)]
             )
 
         if self.inferred_safe:
-            print("Selecting safe cell")
+            logging.info("Selecting safe cell")
             return self.inferred_safe.pop()
 
         if len(self.game.remaining_cells):
-            print("Selecting random remaining cell")
-            print(f"game.remaining_cells: {self.game.remaining_cells}")
-            print(f"self.inferred_mines: {self.inferred_mines}")
-            print(f"mine cells: {self.game.mines}")
             remaining_non_inferred_mine_cells = (
                 self.game.remaining_cells - self.inferred_mines
             )
@@ -77,14 +74,15 @@ class MinesweeperBot:
             if clue - inferred_mines_count == len(unrevealed_neighbors):
                 self.inferred_mines.update(unrevealed_neighbors)
             # If the total safe spots equals the total neighbors minus the clue, all unrevealed are safe
-            if (8 - clue) - safe_count == len(unrevealed_neighbors):
+            if (len(neighbors) - clue) - safe_count == len(unrevealed_neighbors):
                 self.inferred_safe.update(unrevealed_neighbors)
 
-    def play_turn(self):
+    def play_turn(self, turn_number: int):
         """Plays a single turn of Minesweeper."""
 
         selected_cell = self.select_cell()
-        print(f"Selected cell: {selected_cell}")
+        self.moves[turn_number] = selected_cell
+        logging.info(f"Selected cell: {selected_cell}")
         result = self.game.play_turn(selected_cell)
         self.update_knowledge(selected_cell)
         self.infer_cells()
@@ -95,8 +93,9 @@ if __name__ == "__main__":
     game = Minesweeper(10, 10, 10)
     bot = MinesweeperBot(game)
     game.print_board()
-    for _ in range(50):
-        result = bot.play_turn()
+    for i in range(50):
+        result = bot.play_turn(i + 1)
         if result == GameResult.MINE or result == GameResult.WIN:
+            logging.info(f"Moves: {bot.moves}")
             break
         game.print_board()
