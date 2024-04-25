@@ -10,27 +10,33 @@ class Minesweeper:
         self.height = height
         self.total_mines = mines
         self.mines = set()
+        self.clues = dict()
         self.remaining_cells = set()
-        self.user_board = [["?" for _ in range(width)] for _ in range(height)]
-        self.mine_board = [[0 for _ in range(width)] for _ in range(height)]
+        self.user_board = [["?" for _ in range(height)] for _ in range(width)]
+        self.mine_board = [[0 for _ in range(height)] for _ in range(width)]
 
     def place_mines(self, first_cell: Tuple[int, int]):
         """Place mines on the board, ensuring the first cell and its neighbors are safe."""
 
+        logging.debug("Placing mines...")
+
         safe_zone = {first_cell}
         for dx in range(-1, 2):
             for dy in range(-1, 2):
+                if dx == 0 and dy == 0:
+                    continue
+
                 nx, ny = first_cell[0] + dx, first_cell[1] + dy
                 if nx in range(self.height) and ny in range(self.width):
                     safe_zone.add((nx, ny))
-        self.mine_board[first_cell[0]][first_cell[1]] = 0
 
-        all_cells = set(
+        self.mine_board[first_cell[0]][first_cell[1]] = 0
+        self.remaining_cells = set(
             (row, col) for row in range(self.height) for col in range(self.width)
         )
-        mineable_cells = list(all_cells - safe_zone)
+
+        mineable_cells = list(self.remaining_cells - safe_zone)
         self.mines = set(random.sample(mineable_cells, self.total_mines))
-        self.remaining_cells = all_cells - self.mines
         self.initialize_mine_board()
 
     def initialize_mine_board(self):
@@ -39,6 +45,9 @@ class Minesweeper:
             self.mine_board[row][col] = -1
             for dx in range(-1, 2):
                 for dy in range(-1, 2):
+                    if dx == 0 and dy == 0:
+                        continue
+
                     nx, ny = row + dx, col + dy
                     if (
                         nx in range(self.height)
@@ -63,7 +72,7 @@ class Minesweeper:
                 )
                 board_row.append(str(cell_display))
             board_string += "\n" if row == 0 else "" + " ".join(board_row) + "\n"
-        logging.info(board_string)
+        logging.debug(board_string)
 
     def uncover(self, cell: Tuple[int, int]):
         row, col = cell
@@ -71,7 +80,7 @@ class Minesweeper:
             return GameResult.OUT_OF_BOUNDS
         if self.user_board[row][col] != "?":
             return GameResult.ALREADY_UNCOVERED
-        if self.mine_board[row][col] == -1:
+        if (row, col) in self.mines:
             self.user_board[row][col] = "M"
             return GameResult.MINE
 
@@ -80,40 +89,46 @@ class Minesweeper:
         if not self.remaining_cells:
             return GameResult.WIN
 
-        logging.info(f"Remaining cells: {len(self.remaining_cells)}")
+        logging.debug(f"Remaining cells: {len(self.remaining_cells)}")
         return GameResult.OK
 
     def open_adjacent_cells(self, row, col):
-        if row not in range(self.height) or col not in range(self.width):
-            return
-        if self.mine_board[row][col] == -1 or self.user_board[row][col] != "?":
+        if (
+            row not in range(self.height)
+            or col not in range(self.width)
+            or (row, col) in self.mines
+            or (row, col) not in self.remaining_cells
+        ):
             return
 
         self.user_board[row][col] = str(self.mine_board[row][col])
+        self.clues[(row, col)] = self.mine_board[row][col]
         self.remaining_cells.remove((row, col))
 
         if self.mine_board[row][col] == 0:
             for dx in range(-1, 2):
                 for dy in range(-1, 2):
+                    if dx == 0 and dy == 0:
+                        continue
                     self.open_adjacent_cells(row + dx, col + dy)
 
     def play_turn(self, cell: Tuple[int, int]) -> GameResult:
         """Plays a single turn of Minesweeper."""
 
-        if len(self.mines) == 0:
+        if not self.mines:
             self.place_mines(cell)
 
         result = self.uncover(cell)
         if result == GameResult.OUT_OF_BOUNDS:
-            logging.info("That cell is out of bounds. Please try again.")
+            logging.debug("That cell is out of bounds. Please try again.")
         elif result == GameResult.ALREADY_UNCOVERED:
-            logging.info("That cell is already uncovered. Please try again.")
+            logging.debug("That cell is already uncovered. Please try again.")
         elif result == GameResult.MINE:
-            logging.info("Game Over!")
+            logging.debug("Mine hit! Game Over!")
             self.print_board(reveal=True)
         elif result == GameResult.WIN:
-            logging.info("You win!")
-            self.print_board(reveal=False)
+            logging.debug("You win!")
+            self.print_board(reveal=True)
 
         return result
 
@@ -125,15 +140,10 @@ class Minesweeper:
             if action == "q":
                 break
             elif not action.startswith("u "):
-                logging.info("Invalid action. Please try again.")
+                logging.debug("Invalid action. Please try again.")
                 continue
 
             _, row, col = action.split()
             result = self.play_turn((int(row), int(col)))
             if result == GameResult.MINE or result == GameResult.WIN:
                 break
-
-
-if __name__ == "__main__":
-    game = Minesweeper(10, 10, 20)
-    game.play_interactive()

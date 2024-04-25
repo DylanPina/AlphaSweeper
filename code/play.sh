@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Test for addlog.py
-echo -e "\nRunning logic bot..."
+echo -e "Running logic bot..."
 
-python ./logic_bot_runner.py -log "INFO" -games 3 -size 10 -mines 10
+python ./main.py -log "DEBUG" -difficulty "EASY" -games 100
+
+echo -e "Done."

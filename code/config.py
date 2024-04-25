@@ -1,12 +1,18 @@
 import logging
 
+difficulty_levels = {
+    "EASY": (9, 9, 10),
+    "MEDIUM": (16, 16, 40),
+    "HARD": (30, 16, 99),
+}
+
 
 def init_logging(log_arg: str = "ERROR") -> None:
     """Initializes logging capabilities for entire applicaiton"""
 
     log_levels = {
         "DEBUG": logging.DEBUG,
-        "INFO": logging.INFO,
+        "INFO": logging.debug,
         "WARNING": logging.WARNING,
         "ERROR": logging.ERROR,
         "CRITICAL": logging.CRITICAL,
