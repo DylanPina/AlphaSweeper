@@ -12,8 +12,8 @@ class Minesweeper:
         self.mines = set()
         self.clues = dict()
         self.remaining_cells = set()
-        self.user_board = [["?" for _ in range(height)] for _ in range(width)]
-        self.mine_board = [[0 for _ in range(height)] for _ in range(width)]
+        self.user_board = [[-2 for _ in range(width)] for _ in range(height)]
+        self.mine_board = [[0 for _ in range(width)] for _ in range(height)]
 
     def place_mines(self, first_cell: Tuple[int, int]):
         """Place mines on the board, ensuring the first cell and its neighbors are safe."""
@@ -78,10 +78,10 @@ class Minesweeper:
         row, col = cell
         if row not in range(self.height) or col not in range(self.width):
             return GameResult.OUT_OF_BOUNDS
-        if self.user_board[row][col] != "?":
+        if self.user_board[row][col] != -2:
             return GameResult.ALREADY_UNCOVERED
         if (row, col) in self.mines:
-            self.user_board[row][col] = "M"
+            self.user_board[row][col] = -1
             return GameResult.MINE
 
         self.open_adjacent_cells(row, col)
@@ -101,7 +101,7 @@ class Minesweeper:
         ):
             return
 
-        self.user_board[row][col] = str(self.mine_board[row][col])
+        self.user_board[row][col] = self.mine_board[row][col]
         self.clues[(row, col)] = self.mine_board[row][col]
         self.remaining_cells.remove((row, col))
 

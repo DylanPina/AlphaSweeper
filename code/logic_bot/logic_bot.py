@@ -15,6 +15,7 @@ class LogicBot:
         self.inferred_mines: set = set()
         self.clues: dict = {}
         self.moves: dict = {}
+        self.board_states: dict = {}
         self.first_move = True
 
     def select_cell(self) -> Tuple[int, int]:
@@ -24,7 +25,6 @@ class LogicBot:
             return (self.height // 2, self.width // 2)
 
         if self.inferred_safe:
-            logging.debug("Selecting safe cell")
             return self.inferred_safe.pop()
 
         return random.choice(tuple(self.game.remaining_cells))
@@ -64,6 +64,7 @@ class LogicBot:
 
         selected_cell = self.select_cell()
         self.moves[turn_number] = selected_cell
+        self.board_states[turn_number] = self.game.user_board
 
         logging.debug(f"Turn {turn_number} - Selected cell: {selected_cell}")
 
