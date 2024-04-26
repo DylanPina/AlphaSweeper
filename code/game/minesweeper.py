@@ -1,7 +1,7 @@
 import logging
 import random
 from typing import Tuple
-from utils import GameResult
+from common.utils import GameResult
 
 
 class Minesweeper:

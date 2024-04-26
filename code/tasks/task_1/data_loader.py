@@ -1,12 +1,8 @@
-import sys
-import argparse
+import logging
+import os
 import json
-
-sys.path.append("../../")
-
-
-from config import base_dir, init_logging
-from logic_bot import LogicBotRunner
+from common.config import base_dir, init_logging
+from logic_bot.logic_bot_runner import LogicBotRunner
 
 
 class Task1DataLoader:
@@ -17,13 +13,19 @@ class Task1DataLoader:
     def save(self, data, file_name: str = "task_1_data"):
         """Saves the data to a json file"""
 
-        with open(f"{base_dir}/data/{file_name}.json", "w") as f:
+        with open(f"{base_dir}/data/{file_name}", "w") as f:
             json.dump(data, f)
 
     def load(self, file_name: str = "task_1_data"):
         """Loads the data from a json file"""
 
+        file_path = f"{base_dir}/data/{file_name}.json"
+        if not os.path.exists(file_path):
+            logging.debug(f"{file_path} does not exist")
+            return None
+
         with open(f"{base_dir}/data/{file_name}.json", "rb") as f:
+            logging.info(f"Loading {file_name}.json")
             data = json.load(f)
 
         board_states = data["board_states"]
@@ -47,11 +49,11 @@ class Task1DataLoader:
             runner.run()
         )
 
-        print(f"Running logic bot with {games} games")
-        print(f"Board: {width}x{height} with {mines} mines")
-        print(f"Total games played: {len(moves)}")
-        print(f"Win rate: {100 * win_rate:.2f}%")
-        print(f"Average turns per game: {average_turns}\n")
+        logging.info(f"Running logic bot with {games} games")
+        logging.info(f"Board: {width}x{height} with {mines} mines")
+        logging.info(f"Total games played: {len(moves)}")
+        logging.info(f"Win rate: {100 * win_rate:.2f}%")
+        logging.info(f"Average turns per game: {average_turns}\n")
 
         self.save(
             {
@@ -65,38 +67,9 @@ class Task1DataLoader:
             file,
         )
 
-        return board_states, moves, results, win_rate, average_turns
+        return board_states, revealed_states, moves, results, win_rate, average_turns
 
     def transform(self, data):
         """Transforms the data into a format that can be used for training"""
 
         return data
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-log")
-    parser.add_argument("-file")
-    parser.add_argument("-games")
-    parser.add_argument("-width")
-    parser.add_argument("-height")
-    parser.add_argument("-mines")
-
-    args = parser.parse_args()
-    log_level, file, games, width, height, mines = (
-        args.log,
-        args.file,
-        args.games,
-        args.width,
-        args.height,
-        args.mines,
-    )
-
-    loader = Task1DataLoader()
-    loader.run_logic_bot(
-        log_level, file, int(games), int(width), int(height), int(mines)
-    )
-
-    board_states, revealed_states, moves, results, win_rate, average_turns = (
-        loader.load(file)
-    )

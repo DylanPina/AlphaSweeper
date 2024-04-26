@@ -8,7 +8,7 @@ difficulty_levels = {
     "HARD": (30, 16, 99),
 }
 
-base_dir = f"{os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))}/final-project/code"
+base_dir = f"{os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))}/code"
 
 
 def init_logging(log_arg: str = "ERROR", file_name: str = "log") -> None:

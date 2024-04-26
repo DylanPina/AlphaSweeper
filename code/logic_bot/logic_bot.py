@@ -1,8 +1,8 @@
 import logging
-from typing import List, Tuple
 import random
-from utils import GameResult
-from minesweeper import Minesweeper
+from typing import List, Tuple
+from common.utils import GameResult
+from game.minesweeper import Minesweeper
 
 
 class LogicBot:
