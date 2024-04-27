@@ -13,7 +13,8 @@ class Minesweeper:
         self.clues = dict()
         self.remaining_cells = set()
         self.user_board = [[-2 for _ in range(width)] for _ in range(height)]
-        self.mine_board = [[0 for _ in range(width)] for _ in range(height)]
+        self.revealed_board = [[0 for _ in range(width)] for _ in range(height)]
+        self.safe_board = [[1 for _ in range(width)] for _ in range(height)]
 
     def place_mines(self, first_cell: Tuple[int, int]):
         """Place mines on the board, ensuring the first cell and its neighbors are safe."""
@@ -30,19 +31,22 @@ class Minesweeper:
                 if nx in range(self.height) and ny in range(self.width):
                     safe_zone.add((nx, ny))
 
-        self.mine_board[first_cell[0]][first_cell[1]] = 0
+        self.revealed_board[first_cell[0]][first_cell[1]] = 0
         self.remaining_cells = set(
             (row, col) for row in range(self.height) for col in range(self.width)
         )
 
         mineable_cells = list(self.remaining_cells - safe_zone)
         self.mines = set(random.sample(mineable_cells, self.total_mines))
-        self.initialize_mine_board()
+        self.initialize_board()
 
-    def initialize_mine_board(self):
+    def initialize_board(self):
+        """Initialize the board with the number of mines adjacent to each cell and where the mine cells are."""
+
         for mine in self.mines:
             row, col = mine
-            self.mine_board[row][col] = -1
+            self.revealed_board[row][col] = -1
+            self.safe_board[row][col] = 0
             for dx in range(-1, 2):
                 for dy in range(-1, 2):
                     if dx == 0 and dy == 0:
@@ -52,11 +56,13 @@ class Minesweeper:
                     if (
                         nx in range(self.height)
                         and ny in range(self.width)
-                        and self.mine_board[nx][ny] != -1
+                        and self.revealed_board[nx][ny] != -1
                     ):
-                        self.mine_board[nx][ny] += 1
+                        self.revealed_board[nx][ny] += 1
 
     def print_board(self, reveal=False):
+        """Prints the board to the logs"""
+
         board_string = ""
         for row in range(self.height):
             board_row = []
@@ -65,8 +71,8 @@ class Minesweeper:
                     self.user_board[row][col]
                     if not reveal
                     else (
-                        self.mine_board[row][col]
-                        if self.mine_board[row][col] != -1
+                        self.revealed_board[row][col]
+                        if self.revealed_board[row][col] != -1
                         else "M"
                     )
                 )
@@ -75,6 +81,8 @@ class Minesweeper:
         logging.debug(board_string)
 
     def uncover(self, cell: Tuple[int, int]):
+        """Uncovers a cell"""
+
         row, col = cell
         if row not in range(self.height) or col not in range(self.width):
             return GameResult.OUT_OF_BOUNDS
@@ -93,6 +101,8 @@ class Minesweeper:
         return GameResult.OK
 
     def open_adjacent_cells(self, row, col):
+        """Opens adjacent cells for the given cell according to rules of minesweeper"""
+
         if (
             row not in range(self.height)
             or col not in range(self.width)
@@ -101,11 +111,11 @@ class Minesweeper:
         ):
             return
 
-        self.user_board[row][col] = self.mine_board[row][col]
-        self.clues[(row, col)] = self.mine_board[row][col]
+        self.user_board[row][col] = self.revealed_board[row][col]
+        self.clues[(row, col)] = self.revealed_board[row][col]
         self.remaining_cells.remove((row, col))
 
-        if self.mine_board[row][col] == 0:
+        if self.revealed_board[row][col] == 0:
             for dx in range(-1, 2):
                 for dy in range(-1, 2):
                     if dx == 0 and dy == 0:
@@ -133,6 +143,8 @@ class Minesweeper:
         return result
 
     def play_interactive(self):
+        """Plays the game in interactive mode (through the console)"""
+
         while True:
             self.print_board()
             action = input("Enter 'u row col' to uncover or 'q' to quit: ")

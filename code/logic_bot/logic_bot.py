@@ -14,8 +14,8 @@ class LogicBot:
         self.inferred_safe: set = set()
         self.inferred_mines: set = set()
         self.clues: dict = {}
-        self.moves: dict = {}
-        self.board_states: dict = {}
+        self.moves = []
+        self.board_states = []
         self.first_move = True
 
     def select_cell(self) -> Tuple[int, int]:
@@ -63,8 +63,8 @@ class LogicBot:
         """Plays a single turn of Minesweeper."""
 
         selected_cell = self.select_cell()
-        self.moves[turn_number] = selected_cell
-        self.board_states[turn_number] = self.game.user_board
+        self.moves.append(selected_cell)
+        self.board_states.append(self.game.user_board)
 
         logging.debug(f"Turn {turn_number} - Selected cell: {selected_cell}")
 

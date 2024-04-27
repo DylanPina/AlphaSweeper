@@ -13,10 +13,10 @@ class LogicBotRunner:
         self.width = width
         self.height = height
         self.mines = mines
-        self.results = {}
-        self.moves = {}
-        self.board_states = {}
-        self.revealed_states = {}
+        self.results = []
+        self.moves = []
+        self.board_states = []
+        self.label_board = []
 
     def run(self):
         """Runs the logic bot and returns the results"""
@@ -34,23 +34,25 @@ class LogicBotRunner:
             while turn < (int(self.width) * int(self.height)):
                 result = bot.play_turn(turn)
                 turn += 1
+
                 if result == GameResult.MINE or result == GameResult.WIN:
                     break
+
+                self.board_states.append(game.user_board)
+                self.label_board.append(game.safe_board)
 
             if turn == (int(self.width) * int(self.height)):
                 logging.critical("Number of turns have exceeding the number of cells.")
 
-            self.board_states[game_number + 1] = bot.board_states
-            self.revealed_states[game_number + 1] = game.mine_board
-            self.moves[game_number + 1] = turn
-            self.results[game_number + 1] = 1 if result == GameResult.WIN else 0
+            self.moves.append(turn)
+            self.results.append(1 if result == GameResult.WIN else 0)
 
-        win_rate = sum(self.results.values()) / len(self.results)
-        avg_moves = sum(self.moves.values()) / len(self.moves)
+        win_rate = sum(self.results) / len(self.results)
+        avg_moves = sum(self.moves) / len(self.moves)
 
         return (
             self.board_states,
-            self.revealed_states,
+            self.label_board,
             self.moves,
             self.results,
             win_rate,
