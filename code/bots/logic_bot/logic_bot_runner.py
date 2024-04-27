@@ -1,6 +1,6 @@
 import logging
 from game.minesweeper import Minesweeper
-from logic_bot import LogicBot
+from bots.logic_bot import LogicBot
 from common.utils import GameResult
 from common.config import init_logging
 

@@ -2,7 +2,7 @@ import logging
 import os
 import json
 from common.config import base_dir, init_logging
-from logic_bot.logic_bot_runner import LogicBotRunner
+from bots.logic_bot.logic_bot_runner import LogicBotRunner
 
 
 class Task1DataLoader:

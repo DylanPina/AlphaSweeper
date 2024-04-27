@@ -1,5 +1,7 @@
 import argparse
-
+import logging
+from bots.network_bot.network_bot_runner import NetworkBotRunner
+from common.config import init_logging
 from tasks.task_1.task_1 import Task1
 
 
@@ -35,6 +37,8 @@ if __name__ == "__main__":
         args.mines,
     )
 
+    init_logging(log_level)
+
     task = Task1(
         log_level,
         test_data_file,
@@ -50,6 +54,13 @@ if __name__ == "__main__":
         task.train()
     )
     task.plot(train_losses, test_losses, train_accuracies, test_accuracies)
-    print(
-        f"Network output: {task.get_next_move([[0, 1, -2, -2, 1, 2, -1, -2, -2], [0, 2, -2, -2, -2, -2, -2, -2, -2], [0, 1, -2, -2, -2, -2, -2, -2, 1], [0, 1, 1, 1, 1, 1, 1, 1, -2], [0, 0, 0, 0, 0, 0, 0, 2, -2], [0, 0, 0, 0, 1, 1, 1, 1, -2], [0, 1, 2, 2, 2, -2, -2, -2, 1], [0, 1, -2, -2, -2, -2, 1, 0, 0], [0, 1, -2, -2, 1, 0, 0, 0, 0]])}"
+
+    runner = NetworkBotRunner(
+        log_level=log_level,
+        network=task.network,
+        games=test_games,
+        width=width,
+        height=height,
+        mines=mines,
     )
+    runner.run()

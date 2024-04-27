@@ -22,12 +22,10 @@ def init_logging(log_arg: str = "ERROR", file_name: str = "log") -> None:
         "CRITICAL": logging.CRITICAL,
     }
 
-    log_path = os.path.join(base_dir, "logs", f"{file_name}.log")
-
     log_level = log_levels[log_arg]
     logging.basicConfig(
         level=log_level,
-        filename=log_path,
+        filename="logs/" + file_name + ".log",
         filemode="w",
         format="%(asctime)s - [%(levelname)s]: %(message)s",
     )

@@ -36,13 +36,6 @@ class Task1:
         self.train_data, self.train_labels = self.load(train_data_file, train_games)
         self.test_data, self.test_labels = self.load(test_data_file, test_games)
 
-    def get_next_move(self, current_move: List[List[int]]):
-        """Returns the next move"""
-
-        network_output = self.network(torch.Tensor(current_move).unsqueeze(0))
-
-        return network_output
-
     def load(self, file: str, games: int):
         """Loads the data from the json file"""
 
@@ -62,7 +55,7 @@ class Task1:
 
         return input, labels
 
-    def train(self, network=Task1Network(), alpha=0.01, epochs=100):
+    def train(self, network=Task1Network(), alpha=0.01, epochs=1):
         """Trains the network"""
 
         train_dataset = MineSweeperDataset(self.train_data, self.train_labels)
