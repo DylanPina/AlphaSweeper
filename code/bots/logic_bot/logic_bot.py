@@ -7,7 +7,7 @@ from game.minesweeper import Minesweeper
 
 class LogicBot:
 
-    def __init__(self, game: Minesweeper):
+    def __init__(self, game: Minesweeper, logger):
         self.game: Minesweeper = game
         self.width: int = game.width
         self.height: int = game.height
@@ -17,6 +17,7 @@ class LogicBot:
         self.moves = []
         self.board_states = []
         self.first_move = True
+        self.logger = logger
 
     def select_cell(self) -> Tuple[int, int]:
         """Selects a cell to uncover, preferring safe cells, then random."""
@@ -47,12 +48,10 @@ class LogicBot:
                 if n in inferred_safe_neighbors or n in revealed_neighbors
             ]
 
-            # If the number of mines equals the clue, all other neighbors are safe
             if clue - len(inferred_mines_neighbors) == len(unrevealed_neighbors):
                 self.inferred_mines.update(unrevealed_neighbors)
                 self.game.remaining_cells.difference_update(unrevealed_neighbors)
 
-            # If the total safe spots equals the total neighbors minus the clue, all unrevealed are safe
             if (len(neighbors) - clue) - len(safe_or_revealed_neighbors) == len(
                 unrevealed_neighbors
             ):
@@ -66,18 +65,17 @@ class LogicBot:
         self.moves.append(selected_cell)
         self.board_states.append(self.game.user_board)
 
-        logging.debug(f"Turn {turn_number} - Selected cell: {selected_cell}")
+        self.logger.debug(f"Turn {turn_number} - Selected cell: {selected_cell}")
 
         result = self.game.play_turn(selected_cell)
 
         self.infer_cells()
 
         if not self.game.remaining_cells:
-            logging.debug("You win!")
             return GameResult.WIN
 
-        logging.debug(f"# Inferred mines: {len(self.inferred_mines)}")
-        logging.debug(f"# Inferred safe: {len(self.inferred_safe)}")
+        self.logger.debug(f"# Inferred mines: {len(self.inferred_mines)}")
+        self.logger.debug(f"# Inferred safe: {len(self.inferred_safe)}")
 
         return result
 

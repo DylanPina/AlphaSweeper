@@ -1,11 +1,10 @@
-import logging
 import random
 from typing import Tuple
 from common.utils import GameResult
 
 
 class Minesweeper:
-    def __init__(self, width, height, mines):
+    def __init__(self, width, height, mines, logger):
         self.width = width
         self.height = height
         self.total_mines = mines
@@ -15,11 +14,12 @@ class Minesweeper:
         self.user_board = [[-2 for _ in range(width)] for _ in range(height)]
         self.revealed_board = [[0 for _ in range(width)] for _ in range(height)]
         self.safe_board = [[1 for _ in range(width)] for _ in range(height)]
+        self.logger = logger
 
     def place_mines(self, first_cell: Tuple[int, int]):
         """Place mines on the board, ensuring the first cell and its neighbors are safe."""
 
-        logging.debug("Placing mines...")
+        self.logger.debug("Placing mines...")
 
         safe_zone = {first_cell}
         for dx in range(-1, 2):
@@ -39,6 +39,9 @@ class Minesweeper:
         mineable_cells = list(self.remaining_cells - safe_zone)
         self.mines = set(random.sample(mineable_cells, self.total_mines))
         self.initialize_board()
+
+        self.logger.debug(f"Revealed board")
+        self.print_board(reveal=True)
 
     def initialize_board(self):
         """Initialize the board with the number of mines adjacent to each cell and where the mine cells are."""
@@ -78,7 +81,7 @@ class Minesweeper:
                 )
                 board_row.append(str(cell_display))
             board_string += "\n" if row == 0 else "" + " ".join(board_row) + "\n"
-        logging.debug(board_string)
+        self.logger.debug(board_string)
 
     def uncover(self, cell: Tuple[int, int]):
         """Uncovers a cell"""
@@ -97,7 +100,7 @@ class Minesweeper:
         if not self.remaining_cells:
             return GameResult.WIN
 
-        logging.debug(f"Remaining cells: {len(self.remaining_cells)}")
+        self.logger.debug(f"Remaining cells: {len(self.remaining_cells)}")
         return GameResult.OK
 
     def open_adjacent_cells(self, row, col):
@@ -130,14 +133,14 @@ class Minesweeper:
 
         result = self.uncover(cell)
         if result == GameResult.OUT_OF_BOUNDS:
-            logging.debug("That cell is out of bounds. Please try again.")
+            self.logger.debug("That cell is out of bounds. Please try again.")
         elif result == GameResult.ALREADY_UNCOVERED:
-            logging.debug("That cell is already uncovered. Please try again.")
+            self.logger.debug("That cell is already uncovered. Please try again.")
         elif result == GameResult.MINE:
-            logging.debug("Mine hit! Game Over!")
+            self.logger.debug("Mine hit! Game Over!")
             self.print_board(reveal=True)
         elif result == GameResult.WIN:
-            logging.debug("You win!")
+            self.logger.debug("You win!")
             self.print_board(reveal=True)
 
         return result
@@ -152,7 +155,7 @@ class Minesweeper:
             if action == "q":
                 break
             elif not action.startswith("u "):
-                logging.debug("Invalid action. Please try again.")
+                self.logger.debug("Invalid action. Please try again.")
                 continue
 
             _, row, col = action.split()
