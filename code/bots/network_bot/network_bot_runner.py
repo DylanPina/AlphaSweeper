@@ -1,5 +1,4 @@
 import logging
-from common.config import init_logging
 from game.minesweeper import Minesweeper
 from .network_bot import NetworkBot
 from common.utils import GameResult
@@ -21,8 +20,6 @@ class NetworkBotRunner:
 
     def run(self):
         """Runs the network bot and returns the results"""
-
-        logging.debug("Starting game...")
 
         for game_number in range(int(self.games)):
             logging.debug(f"Game {game_number + 1}")

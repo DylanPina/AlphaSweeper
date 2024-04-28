@@ -21,10 +21,13 @@ class NetworkBot:
         """Returns the next move"""
 
         current_board_tensor = torch.tensor([self.game.user_board]).float().unsqueeze(0)
-        network_output = self.network(current_board_tensor)
-        network_output_transformed = network_output.squeeze()
+        output = self.network(current_board_tensor)
+        output_transformed = output.squeeze()
+        output_masked = self.apply_mask(
+            output_transformed, current_board_tensor.squeeze()
+        )
         next_move = (
-            (network_output_transformed == torch.max(network_output_transformed))
+            (output_masked == torch.max(output_masked))
             .nonzero()
             .squeeze()
             .detach()
@@ -32,3 +35,9 @@ class NetworkBot:
         )
         row, col = next_move
         return row, col
+
+    def apply_mask(self, input: torch.Tensor, board: torch.Tensor):
+        """Applies a mask to the input tensor which prevents the bot from uncovering cells that have already been revealed"""
+
+        mask = (board == -2).float()
+        return input * mask

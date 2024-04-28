@@ -55,7 +55,7 @@ class Task1:
 
         return input, labels
 
-    def train(self, network=Task1Network(), alpha=0.01, epochs=1):
+    def train(self, network=Task1Network(), alpha=0.01, epochs=100):
         """Trains the network"""
 
         train_dataset = MineSweeperDataset(self.train_data, self.train_labels)
