@@ -1,4 +1,3 @@
-import logging
 import random
 from typing import List, Tuple
 from common.utils import GameResult
@@ -14,8 +13,7 @@ class LogicBot:
         self.inferred_safe: set = set()
         self.inferred_mines: set = set()
         self.clues: dict = {}
-        self.moves = []
-        self.board_states = []
+        self.moves: List[Tuple[int, int]] = []
         self.first_move = True
         self.logger = logger
 
@@ -63,7 +61,6 @@ class LogicBot:
 
         selected_cell = self.select_cell()
         self.moves.append(selected_cell)
-        self.board_states.append(self.game.user_board)
 
         self.logger.debug(f"Turn {turn_number} - Selected cell: {selected_cell}")
 
@@ -74,12 +71,14 @@ class LogicBot:
         if not self.game.remaining_cells:
             return GameResult.WIN
 
-        self.logger.debug(f"# Inferred mines: {len(self.inferred_mines)}")
-        self.logger.debug(f"# Inferred safe: {len(self.inferred_safe)}")
-
         return result
 
     def get_cell_inference_data(self, cell: Tuple[int, int]):
+        """
+        Returns the cell's neighbors, revealed neighbors, unrevealed neighbors, inferred safe neighbors,
+        and inferred mine neighbors
+        """
+
         row, col = cell
         neighbors = self.get_cell_neighbors(row, col)
         revealed_neighbors = self.get_revealed_neighbors(neighbors)
@@ -96,6 +95,8 @@ class LogicBot:
         )
 
     def get_cell_neighbors(self, row: int, col: int):
+        """Returns the cell's neighbors"""
+
         return [
             (row + dx, col + dy)
             for dx in range(-1, 2)
@@ -106,6 +107,8 @@ class LogicBot:
         ]
 
     def get_revealed_neighbors(self, neighbors: List[Tuple[int, int]]):
+        """Returns the cell's revealed neighbors"""
+
         return [
             n
             for n in neighbors
@@ -115,6 +118,8 @@ class LogicBot:
         ]
 
     def get_unrevealed_neighbors(self, neighbors: List[Tuple[int, int]]):
+        """Returns the cell's unrevealed neighbors"""
+
         return [
             n
             for n in neighbors
@@ -124,7 +129,11 @@ class LogicBot:
         ]
 
     def get_inferred_safe_neighbors(self, neighbors: List[Tuple[int, int]]):
+        """Returns the cell's inferred safe neighbors"""
+
         return [n for n in neighbors if n in self.inferred_safe]
 
     def get_inferred_mines_neighbors(self, neighbors: List[Tuple[int, int]]):
+        """Returns the cell's inferred mine neighbors"""
+
         return [n for n in neighbors if n in self.inferred_mines]

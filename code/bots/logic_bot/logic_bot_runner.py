@@ -6,8 +6,7 @@ from common.config import close_logger, setup_logger, base_dir
 
 class LogicBotRunner:
 
-    def __init__(self, log_level, games, width, height, mines, stop_on_hit=False):
-        self.log_level = log_level
+    def __init__(self, games, width, height, mines, stop_on_hit=True):
         self.games = games
         self.width = width
         self.height = height
@@ -22,14 +21,16 @@ class LogicBotRunner:
     def run(self):
         """Runs the logic bot and returns the results"""
 
+        self.logger.info(f"Running logic bot with {self.games} games")
+        self.logger.info(f"Board: {self.width}x{self.height} with {self.mines} mines")
+
         for game_number in range(int(self.games)):
-            self.logger.debug(f"Game {game_number + 1}")
+            self.logger.debug(f"Starting game #{game_number + 1}...")
 
             game = Minesweeper(
                 int(self.width), int(self.height), int(self.mines), self.logger
             )
             bot = LogicBot(game, self.logger)
-            game.print_board()
 
             result, turn = None, 0
             while turn < (int(self.width) * int(self.height)):
@@ -37,27 +38,32 @@ class LogicBotRunner:
                 turn += 1
 
                 if (
-                    result == (GameResult.MINE and self.stop_on_hit)
+                    (result == GameResult.MINE)
+                    and self.stop_on_hit
                     or result == GameResult.WIN
                 ):
                     break
 
-                self.board_states.append(game.user_board)
-                self.label_board.append(game.safe_board)
+                game.print_board(reveal=False)
 
-            if turn == (int(self.width) * int(self.height)):
-                self.logger.critical(
-                    "Number of turns have exceeding the number of cells."
-                )
-
-            close_logger(self.logger)
+            print(f"Game {game_number + 1} result: {result}")
+            for i, board_state in enumerate(game.board_states):
+                print(f"Board state {i + 1}:")
+                for row in board_state:
+                    print(row)
+                self.board_states.append(board_state)
+                self.label_board.append(game.label_board)
 
             self.moves.append(turn)
             self.results.append(1 if result == GameResult.WIN else 0)
 
         win_rate = sum(self.results) / len(self.results)
         avg_moves = sum(self.moves) / len(self.moves)
-        self.logger.info(f"Win Rate: {win_rate} | Avg. Moves: {avg_moves}")
+
+        self.logger.info(
+            f"Logic bot finished playing. Win Rate: {win_rate} | Avg. Moves: {avg_moves}"
+        )
+        close_logger(self.logger)
 
         return (
             self.board_states,

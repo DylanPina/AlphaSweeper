@@ -1,6 +1,7 @@
 import random
 from typing import Tuple
 from common.utils import GameResult
+from copy import deepcopy
 
 
 class Minesweeper:
@@ -13,7 +14,8 @@ class Minesweeper:
         self.remaining_cells = set()
         self.user_board = [[-2 for _ in range(width)] for _ in range(height)]
         self.revealed_board = [[0 for _ in range(width)] for _ in range(height)]
-        self.safe_board = [[1 for _ in range(width)] for _ in range(height)]
+        self.label_board = [[0 for _ in range(width)] for _ in range(height)]
+        self.board_states = []
         self.logger = logger
 
     def place_mines(self, first_cell: Tuple[int, int]):
@@ -40,7 +42,7 @@ class Minesweeper:
         self.mines = set(random.sample(mineable_cells, self.total_mines))
         self.initialize_board()
 
-        self.logger.debug(f"Revealed board")
+        self.logger.debug("Revealed board:")
         self.print_board(reveal=True)
 
     def initialize_board(self):
@@ -49,7 +51,7 @@ class Minesweeper:
         for mine in self.mines:
             row, col = mine
             self.revealed_board[row][col] = -1
-            self.safe_board[row][col] = 0
+            self.label_board[row][col] = 1
             for dx in range(-1, 2):
                 for dy in range(-1, 2):
                     if dx == 0 and dy == 0:
@@ -63,25 +65,37 @@ class Minesweeper:
                     ):
                         self.revealed_board[nx][ny] += 1
 
-    def print_board(self, reveal=False):
-        """Prints the board to the logs"""
+    def print_board(self, reveal=False, to_console=False):
+        """Prints the board to the logs with row and column indexes."""
 
-        board_string = ""
+        col_header = "      " + "  ".join(str(i) for i in range(self.width))
+        col_header += (
+            "\n-----" + "---" * min(self.width, 10) + "-----" * min(self.width - 10, 0)
+        )
+        board_string = col_header + "\n"
+
         for row in range(self.height):
-            board_row = []
+            board_row = [f"{row:2} |"]
             for col in range(self.width):
-                cell_display = (
-                    self.user_board[row][col]
-                    if not reveal
-                    else (
-                        self.revealed_board[row][col]
-                        if self.revealed_board[row][col] != -1
-                        else "M"
-                    )
-                )
-                board_row.append(str(cell_display))
-            board_string += "\n" if row == 0 else "" + " ".join(board_row) + "\n"
-        self.logger.debug(board_string)
+                if reveal:
+                    if (row, col) in self.mines:
+                        cell_display = "M"
+                    else:
+                        cell_display = self.revealed_board[row][col]
+                else:
+                    if self.user_board[row][col] == -2:
+                        cell_display = "?"
+                    elif self.user_board[row][col] == -1:
+                        cell_display = "M"
+                    else:
+                        cell_display = self.user_board[row][col]
+                board_row.append(f"{cell_display: >2}")
+            board_string += " ".join(board_row) + "\n"
+
+        if to_console:
+            print(board_string)
+        else:
+            self.logger.debug(f"\n{board_string}")
 
     def uncover(self, cell: Tuple[int, int]):
         """Uncovers a cell"""
@@ -100,7 +114,6 @@ class Minesweeper:
         if not self.remaining_cells:
             return GameResult.WIN
 
-        self.logger.debug(f"Remaining cells: {len(self.remaining_cells)}")
         return GameResult.OK
 
     def open_adjacent_cells(self, row, col):
@@ -143,13 +156,15 @@ class Minesweeper:
             self.logger.debug("You win!")
             self.print_board(reveal=True)
 
+        self.board_states.append(deepcopy(self.user_board))
         return result
 
     def play_interactive(self):
         """Plays the game in interactive mode (through the console)"""
 
         while True:
-            self.print_board()
+            self.print_board(to_console=True)
+
             action = input("Enter 'u row col' to uncover or 'q' to quit: ")
 
             if action == "q":

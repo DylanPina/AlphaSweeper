@@ -1,4 +1,4 @@
-from common.config import setup_logger, base_dir
+from common.config import close_logger, setup_logger, base_dir
 from game.minesweeper import Minesweeper
 from .network_bot import NetworkBot
 from common.utils import GameResult
@@ -24,7 +24,7 @@ class NetworkBotRunner:
         """Runs the network bot and returns the results"""
 
         for game_number in range(int(self.games)):
-            self.logger.debug(f"Game {game_number + 1}")
+            self.logger.info(f"Starting game #{game_number + 1}...")
 
             game = Minesweeper(
                 int(self.width), int(self.height), int(self.mines), self.logger
@@ -39,13 +39,10 @@ class NetworkBotRunner:
                 if result == GameResult.MINE or result == GameResult.WIN:
                     break
 
-                self.board_states.append(game.user_board)
-                self.label_board.append(game.safe_board)
+                game.print_board(reveal=False)
 
-            if turn == (int(self.width) * int(self.height)):
-                self.logger.critical(
-                    "Number of turns have exceeding the number of cells."
-                )
+                self.board_states.append(game.user_board)
+                self.label_board.append(game.label_board)
 
             self.moves.append(turn)
             self.results.append(1 if result == GameResult.WIN else 0)
@@ -54,6 +51,7 @@ class NetworkBotRunner:
         avg_moves = sum(self.moves) / len(self.moves)
 
         self.logger.info(f"Win rate: {win_rate:.2f} | Average moves: {avg_moves:.2f}")
+        close_logger(self.logger)
 
         return (
             self.board_states,

@@ -4,6 +4,7 @@ import torch.optim as optim
 import time
 import matplotlib.pyplot as plt
 import argparse
+from bots.logic_bot.logic_bot_runner import LogicBotRunner
 from common.config import base_dir, configure_logging, setup_logger
 from tasks.task_1.dataset import MineSweeperDataset
 from tasks.task_1.network import Task1Network
@@ -15,7 +16,6 @@ class Task1:
 
     def __init__(
         self,
-        log_level: str,
         test_data_file: str,
         train_data_file: str,
         test_games: int,
@@ -24,7 +24,6 @@ class Task1:
         height: int,
         mines: int,
     ):
-        self.log_level = log_level
         self.test_data_file = test_data_file
         self.train_data_file = train_data_file
         self.train_games = train_games
@@ -34,15 +33,34 @@ class Task1:
         self.mines = mines
         self.network = Task1Network()
         self.data_loader = Task1DataLoader()
+        self.logger = setup_logger("Task 1", f"{base_dir}/logs/task_1/task_1.log")
         self.train_data, self.train_labels = self.load_data(
             train_data_file, train_games
         )
         self.test_data, self.test_labels = self.load_data(test_data_file, test_games)
 
-    def train(self, network=Task1Network(), alpha=0.001, epochs=10, weight_decay=1e-4):
-        """Trains the network"""
+    def run_network_bot(self, games: int):
+        """Runs the network bot"""
 
-        logger = setup_logger("Task 1 Training", f"{base_dir}/logs/task_1/task_1.log")
+        runner = NetworkBotRunner(
+            self.network, games, self.width, self.height, self.mines
+        )
+        return runner.run()
+
+    def run_logic_bot(self, games: int):
+        """Runs the logic bot"""
+
+        runner = LogicBotRunner(games, self.width, self.height, self.mines)
+        return runner.run()
+
+    def compare_results(self, network_bot_results, logic_bot_results):
+        """Compares the results of the network bot and the logic bot"""
+
+        self.logger.info(f"Network Bot Results:\n{network_bot_results}")
+        self.logger.info(f"Logic Bot Results:\n{logic_bot_results}")
+
+    def train(self, network=Task1Network(), alpha=0.001, epochs=10):
+        """Trains the network"""
 
         train_dataset = MineSweeperDataset(self.train_data, self.train_labels)
         test_dataset = MineSweeperDataset(self.test_data, self.test_labels)
@@ -55,22 +73,20 @@ class Task1:
         )
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        logger.info(f"Using device: {device}")
+        self.logger.info(f"Using device: {device}")
         network.to(device)
 
         criterion = nn.BCELoss()
-        optimizer = optim.Adam(
-            network.parameters(), lr=alpha, weight_decay=weight_decay
-        )
+        optimizer = optim.Adam(network.parameters(), lr=alpha)
 
         train_losses, test_losses = [], []
         train_accuracies, test_accuracies = [], []
         elapsed_times = []
 
-        logger.info("Starting training for Task 1...")
-        logger.info(
+        self.logger.info("Starting training for Task 1...")
+        self.logger.info(
             f"# Parameters: {sum(p.numel() for p in network.parameters())}, Epochs: {epochs}, Alpha: {alpha}"
-            + f" # Train data: {len(test_loader.dataset)}, # Test data: {len(test_loader.dataset)}"
+            + f" # Train data: {len(train_loader.dataset)}, # Test data: {len(test_loader.dataset)}"
         )
 
         network.train()
@@ -114,7 +130,7 @@ class Task1:
             test_accuracies.append(total_test_correct / len(test_loader.dataset))
 
             elapsed_times.append(time.time() - start_time)
-            logger.info(
+            self.logger.info(
                 f"Epoch {epoch + 1}/{epochs} completed with average train loss = {avg_train_loss}, average test loss = {avg_test_loss},"
                 + f" average train accuracy = {train_accuracies[-1]}, average test accuracy = {test_accuracies[-1]}, time elapsed = {elapsed_times[-1]} seconds"
             )
@@ -130,10 +146,10 @@ class Task1:
     def load_data(self, file: str, games: int):
         """Loads the data from the json file"""
 
+        self.logger.debug(f"Loading data from {file}...")
         data = self.data_loader.load(file)
         if not data:
             data = self.data_loader.run_logic_bot(
-                self.log_level,
                 file,
                 games,
                 self.width,
@@ -151,10 +167,10 @@ class Task1:
 
         return self.network.load_state_dict(torch.load(file))
 
-    def save_model(self, file: str):
+    def save_model(self, network, file: str):
         """Saves the model to the file"""
 
-        torch.save(self.network.state_dict(), file)
+        torch.save(network.state_dict(), file)
 
     def plot(self, train_losses, test_losses, train_accuracies, test_accuracies):
         """Plots the loss and accuracy graphs"""
@@ -199,8 +215,8 @@ if __name__ == "__main__":
     (
         log_level,
         train,
-        test_data_file,
         train_data_file,
+        test_data_file,
         train_games,
         test_games,
         network_bot_games,
@@ -223,31 +239,30 @@ if __name__ == "__main__":
     configure_logging(log_level)
 
     task = Task1(
-        log_level,
-        test_data_file,
-        train_data_file,
-        test_games,
-        train_games,
-        width,
-        height,
-        mines,
+        test_data_file=test_data_file,
+        train_data_file=train_data_file,
+        train_games=train_games,
+        test_games=test_games,
+        width=width,
+        height=height,
+        mines=mines,
     )
 
     if train:
+        training_network = Task1Network()
         train_losses, train_accuracies, test_losses, test_accuracies, elapsed_times = (
-            task.train()
+            task.train(network=training_network)
         )
-        task.save_model(f"{base_dir}/models/task_1/model.pt")
+        task.save_model(training_network, f"{base_dir}/models/task_1/model.pt")
         task.plot(train_losses, test_losses, train_accuracies, test_accuracies)
 
     network = Task1Network()
     network.load_state_dict(torch.load(f"{base_dir}/models/task_1/model.pt"))
 
-    runner = NetworkBotRunner(
-        network=network,
-        games=network_bot_games,
-        width=width,
-        height=height,
-        mines=mines,
+    print("Running network bot...")
+    board_states, labels, moves, results, win_rate, average_turns = (
+        task.run_network_bot(network_bot_games)
     )
-    runner.run()
+    print("Finished running network bot")
+    print(f"Win Rate: {win_rate}")
+    print(f"Average Turns: {average_turns}")

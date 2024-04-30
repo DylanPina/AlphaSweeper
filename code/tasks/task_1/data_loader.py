@@ -14,6 +14,9 @@ class Task1DataLoader:
         """Saves the data to a json file"""
 
         with open(f"{base_dir}/data/task_1/{file_name}.json", "w") as f:
+            self.logger.info(
+                f"Saving {len(data['board_states'])} board states points to {file_name}.json"
+            )
             json.dump(data, f)
 
     def load(self, file_name: str = "task_1_data"):
@@ -21,28 +24,24 @@ class Task1DataLoader:
 
         file_path = f"{base_dir}/data/task_1/{file_name}.json"
         if not os.path.exists(file_path):
-            self.logger.debug(f"{file_path} does not exist")
+            self.logger.debug(f"Failed to load... {file_path} does not exist")
             return None
 
         with open(f"{base_dir}/data/task_1/{file_name}.json", "rb") as f:
-            self.logger.info(f"Loading {file_name}.json")
-            return json.load(f)
+            data = json.load(f)
+            self.logger.info(
+                f"Loading {len(data['board_states'])} board states from {file_name}.json"
+            )
+            return data
 
-    def run_logic_bot(
-        self, log_level: str, file: str, games: int, width: int, height: int, mines: int
-    ):
+    def run_logic_bot(self, file: str, games: int, width: int, height: int, mines: int):
         """Runs the logic bot and saves the results to a json file"""
 
-        runner = LogicBotRunner(log_level, games, width, height, mines)
+        runner = LogicBotRunner(games, width, height, mines)
+
         board_states, revealed_states, moves, results, win_rate, average_turns = (
             runner.run()
         )
-
-        self.logger.info(f"Running logic bot with {games} games")
-        self.logger.info(f"Board: {width}x{height} with {mines} mines")
-        self.logger.info(f"Total games played: {len(moves)}")
-        self.logger.info(f"Win rate: {100 * win_rate:.2f}%")
-        self.logger.info(f"Average turns per game: {average_turns}\n")
 
         logic_bot_data = {
             "board_states": board_states,

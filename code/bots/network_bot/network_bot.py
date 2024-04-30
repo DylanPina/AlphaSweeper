@@ -1,4 +1,5 @@
 import torch
+import random
 from common.utils import transform
 from tasks.task_1.network import Task1Network
 from game.minesweeper import Minesweeper
@@ -23,14 +24,15 @@ class NetworkBot:
 
         input = torch.tensor([self.game.user_board]).unsqueeze(1)
         input_transformed = transform(input)
+
         output = self.network(input_transformed)
         output_transformed = output.squeeze()
         output_masked = self.apply_mask(output_transformed, input_transformed.squeeze())
 
-        self.logger.debug(f"Output: {output_masked}" "")
+        self.logger.debug(f"Network output:\n{output_masked}")
 
-        next_move = (
-            (output_masked == torch.max(output_masked))
+        next_move = random.choice(
+            (output_masked == torch.min(output_masked))
             .nonzero()
             .squeeze()
             .detach()
@@ -41,7 +43,8 @@ class NetworkBot:
         return row, col
 
     def apply_mask(self, input: torch.Tensor, board: torch.Tensor):
-        """Applies a mask to the input tensor which prevents the bot from uncovering cells that have already been revealed"""
+        """Applies a mask to the input tensor which prevents the bot from selecting cells that are set to 1 by assigning them a very high negative value (for minimization problems)."""
 
-        mask = (board == 1).float()
-        return input * mask
+        mask = board != 1
+        input[mask] = float("inf")
+        return input
