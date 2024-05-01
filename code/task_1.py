@@ -34,16 +34,14 @@ class Task1:
         self.network = Task1Network()
         self.data_loader = Task1DataLoader()
         self.logger = setup_logger("Task 1", f"{base_dir}/logs/task_1/task_1.log")
-        self.train_data, self.train_labels = self.load_data(
-            train_data_file, train_games
-        )
-        self.test_data, self.test_labels = self.load_data(test_data_file, test_games)
+        self.train_data = self.load_data(train_data_file, train_games)
+        self.test_data = self.load_data(test_data_file, test_games)
 
-    def run_network_bot(self, games: int):
+    def run_network_bot(self, network, games: int):
         """Runs the network bot"""
 
         runner = NetworkBotRunner(
-            self.network, games, self.width, self.height, self.mines
+            network, games, self.width, self.height, self.mines
         )
         return runner.run()
 
@@ -59,11 +57,15 @@ class Task1:
         self.logger.info(f"Network Bot Results:\n{network_bot_results}")
         self.logger.info(f"Logic Bot Results:\n{logic_bot_results}")
 
-    def train(self, network=Task1Network(), alpha=0.001, epochs=10):
+    def train(self, network, alpha=0.001, epochs=10):
         """Trains the network"""
 
-        train_dataset = MineSweeperDataset(self.train_data, self.train_labels)
-        test_dataset = MineSweeperDataset(self.test_data, self.test_labels)
+        train_dataset = MineSweeperDataset(
+            self.train_data["board_states"], self.train_data["revealed_states"]
+        )
+        test_dataset = MineSweeperDataset(
+            self.test_data["board_states"], self.test_data["revealed_states"]
+        )
 
         train_loader = torch.utils.data.DataLoader(
             train_dataset, batch_size=64, shuffle=True
@@ -156,11 +158,7 @@ class Task1:
                 self.height,
                 self.mines,
             )
-
-        input = data["board_states"]
-        labels = data["revealed_states"]
-
-        return input, labels
+        return data
 
     def load_model(self, file: str):
         """Loads the model from the file"""
@@ -261,7 +259,7 @@ if __name__ == "__main__":
 
     print("Running network bot...")
     board_states, labels, moves, results, win_rate, average_turns = (
-        task.run_network_bot(network_bot_games)
+        task.run_network_bot(network, network_bot_games)
     )
     print("Finished running network bot")
     print(f"Win Rate: {win_rate}")

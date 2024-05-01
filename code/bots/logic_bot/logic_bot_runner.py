@@ -46,11 +46,7 @@ class LogicBotRunner:
 
                 game.print_board(reveal=False)
 
-            print(f"Game {game_number + 1} result: {result}")
-            for i, board_state in enumerate(game.board_states):
-                print(f"Board state {i + 1}:")
-                for row in board_state:
-                    print(row)
+            for board_state in game.board_states:
                 self.board_states.append(board_state)
                 self.label_board.append(game.label_board)
 

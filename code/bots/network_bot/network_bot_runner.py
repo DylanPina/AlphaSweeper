@@ -36,7 +36,11 @@ class NetworkBotRunner:
                 result = bot.play_turn(turn)
                 turn += 1
 
-                if result == GameResult.MINE or result == GameResult.WIN:
+                if len(game.remaining_cells) == len(game.mines):
+                    result = GameResult.WIN
+                    break
+
+                if result == GameResult.MINE: 
                     break
 
                 game.print_board(reveal=False)

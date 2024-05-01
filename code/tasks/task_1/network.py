@@ -203,7 +203,7 @@ class PositionalEncodingPermute2D(nn.Module):
         return self.penc.org_channels
 
 
-class Task1Network(nn.Module):
+class Task1NetworkOld(nn.Module):
     def __init__(
         self,
         num_embeddings=11,
@@ -211,7 +211,7 @@ class Task1Network(nn.Module):
         cbam_channels=128,
         out_channels=1,
     ):
-        super(Task1Network, self).__init__()
+        super(Task1NetworkOld, self).__init__()
         self.embedding = nn.Embedding(num_embeddings, embedding_dim)
         self.positional_encoding = PositionalEncodingPermute2D(embedding_dim)
         self.cbam_layers = nn.Sequential(
@@ -232,4 +232,31 @@ class Task1Network(nn.Module):
         x = x + self.positional_encoding(x)
         x = self.cbam_layers(x)
         x = self.final_layers(x)
+        return x
+
+
+class Task1Network(nn.Module):
+    def __init__(
+        self,
+        num_embeddings=11,
+        embedding_dim=4,
+    ):
+        super(Task1Network, self).__init__()
+
+        self.embedding = nn.Embedding(num_embeddings, embedding_dim)
+        self.network = nn.Sequential(
+            nn.Conv2d(in_channels=embedding_dim, out_channels=32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(in_channels=128, out_channels=1, kernel_size=3, padding=1),
+            nn.Sigmoid()
+        )
+        
+    def forward(self, x):
+        x = self.embedding(x)  
+        x = x.squeeze(1).permute(0, 3, 1, 2)  
+        x = self.network(x)
         return x

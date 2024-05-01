@@ -45,15 +45,12 @@ if __name__ == "__main__":
     )
 
     print("Train data:")
-    data = task.train_data[:10]
-    for i, d in enumerate(data):
+    for i, (data, label) in enumerate(
+        zip(task.train_data["board_states"][:10], task.train_data["revealed_states"][:10])
+    ):
         print(f"Data for game {i}:")
-        for row in d:
+        for row in data:
             print(row)
-
-    print("Label data:")
-    labels = task.train_labels[:3]
-    for i, l in enumerate(labels):
-        print(f"Label for game {i}:")
-        for row in l:
+        print(f"Label for board {i}")
+        for row in label:
             print(row)
