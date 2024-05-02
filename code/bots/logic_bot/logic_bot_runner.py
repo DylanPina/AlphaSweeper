@@ -56,16 +56,14 @@ class LogicBotRunner:
         win_rate = sum(self.results) / len(self.results)
         avg_moves = sum(self.moves) / len(self.moves)
 
-        self.logger.info(
-            f"Logic bot finished playing. Win Rate: {win_rate} | Avg. Moves: {avg_moves}"
-        )
+        self.logger.info(f"Win rate: {win_rate:.2f} | Average moves: {avg_moves:.2f}")
         close_logger(self.logger)
 
-        return (
-            self.board_states,
-            self.label_board,
-            self.moves,
-            self.results,
-            win_rate,
-            avg_moves,
-        )
+        return {
+            "board_states": self.board_states,
+            "label_boards": self.label_board,
+            "moves": self.moves,
+            "results": self.results,
+            "win_rate": win_rate,
+            "average_turns": avg_moves,
+        }

@@ -19,5 +19,14 @@ if __name__ == "__main__":
     mines = int(args.mines)
 
     configure_logging(log_level)
-    runner = LogicBotRunner(games, width, height, mines)
-    runner.run()
+
+    easy_runner = LogicBotRunner(games, width, height, mines)
+    easy_results = easy_runner.run()
+
+    medium_runner = LogicBotRunner(games, width, height, mines)
+    medium_results = medium_runner.run()
+
+    hard_runner = LogicBotRunner(games, width, height, mines)
+    hard_results = hard_runner.run()
+
+    print(easy_results, medium_results, hard_results)

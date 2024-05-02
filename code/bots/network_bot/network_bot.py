@@ -1,11 +1,11 @@
 import torch
 from common.utils import transform
-from tasks.task_1.network import Task1Network
+from tasks.task_1.network import Network
 from game.minesweeper import Minesweeper
 
 
 class NetworkBot:
-    def __init__(self, network: Task1Network, game: Minesweeper, logger):
+    def __init__(self, network: Network, game: Minesweeper, logger):
         self.network = network
         self.game = game
         self.logger = logger
@@ -13,13 +13,16 @@ class NetworkBot:
     def play_turn(self, turn_number: int):
         """Plays a turn and returns the result"""
 
-        row, col = self.get_next_move()
-        self.logger.info(f"Turn {turn_number} - Selected cell: ({row}, {col})")
+        row, col = self.get_next_move(turn_number)
+        self.logger.info(f"Turn {turn_number + 1} - Selected cell: ({row}, {col})")
 
         return self.game.play_turn((row, col))
 
-    def get_next_move(self):
+    def get_next_move(self, turn_number: int):
         """Returns the next move"""
+
+        if turn_number == 0:
+            return (self.game.height // 2, self.game.width // 2)
 
         input = torch.tensor([self.game.user_board]).unsqueeze(1)
         input_transformed = transform(input)
@@ -28,7 +31,7 @@ class NetworkBot:
         output_transformed = output.squeeze()
         output_masked = self.apply_mask(output_transformed, input_transformed.squeeze())
 
-        self.logger.debug(f"Network output:")
+        self.logger.debug("Network output:")
         network_output_string = "\n"
         for row in output_masked.tolist():
             network_output_string += str(row) + "\n"

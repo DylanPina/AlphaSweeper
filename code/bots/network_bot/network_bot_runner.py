@@ -23,8 +23,11 @@ class NetworkBotRunner:
     def run(self):
         """Runs the network bot and returns the results"""
 
+        self.logger.info(f"Running logic bot with {self.games} games")
+        self.logger.info(f"Board: {self.width}x{self.height} with {self.mines} mines")
+
         for game_number in range(int(self.games)):
-            self.logger.info(f"Starting game #{game_number + 1}...")
+            self.logger.debug(f"Starting game #{game_number + 1}...")
 
             game = Minesweeper(
                 int(self.width), int(self.height), int(self.mines), self.logger
@@ -37,10 +40,11 @@ class NetworkBotRunner:
                 turn += 1
 
                 if len(game.remaining_cells) == len(game.mines):
+                    self.logger.debug("Network bot has won!")
                     result = GameResult.WIN
                     break
 
-                if result == GameResult.MINE: 
+                if result == GameResult.MINE:
                     break
 
                 game.print_board(reveal=False)
@@ -57,11 +61,11 @@ class NetworkBotRunner:
         self.logger.info(f"Win rate: {win_rate:.2f} | Average moves: {avg_moves:.2f}")
         close_logger(self.logger)
 
-        return (
-            self.board_states,
-            self.label_board,
-            self.moves,
-            self.results,
-            win_rate,
-            avg_moves,
-        )
+        return {
+            "board_states": self.board_states,
+            "label_boards": self.label_board,
+            "moves": self.moves,
+            "results": self.results,
+            "win_rate": win_rate,
+            "average_turns": avg_moves,
+        }

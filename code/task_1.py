@@ -1,266 +1,229 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
-import time
-import matplotlib.pyplot as plt
 import argparse
-from bots.logic_bot.logic_bot_runner import LogicBotRunner
+from code.bots.logic_bot.logic_bot_runner import LogicBotRunner
+from code.bots.network_bot.network_bot_runner import NetworkBotRunner
 from common.config import base_dir, configure_logging, setup_logger
-from tasks.task_1.dataset import MineSweeperDataset
-from tasks.task_1.network import Task1Network
+from tasks.task_1.network import Network
 from tasks.task_1.data_loader import Task1DataLoader
-from bots.network_bot.network_bot_runner import NetworkBotRunner
+from .task import Task
 
 
-class Task1:
+class Task1(Task):
 
     def __init__(
         self,
-        test_data_file: str,
-        train_data_file: str,
-        test_games: int,
-        train_games: int,
-        width: int,
-        height: int,
-        mines: int,
     ):
-        self.test_data_file = test_data_file
-        self.train_data_file = train_data_file
-        self.train_games = train_games
-        self.test_games = test_games
-        self.width = width
-        self.height = height
-        self.mines = mines
-        self.network = Task1Network()
+        super().__init__(setup_logger("Task 1", f"{base_dir}/logs/task_1/task_1.log"))
         self.data_loader = Task1DataLoader()
         self.logger = setup_logger("Task 1", f"{base_dir}/logs/task_1/task_1.log")
-        self.train_data = self.load_data(train_data_file, train_games)
-        self.test_data = self.load_data(test_data_file, test_games)
 
-    def run_network_bot(self, network, games: int):
-        """Runs the network bot"""
+    def generate_data(self, train_games=50000, test_games=10000):
+        """Generates the training data for easy, medium and hard games"""
 
-        runner = NetworkBotRunner(
-            network, games, self.width, self.height, self.mines
+        self.logger.info("Generating easy training data...")
+        easy_train_data = task.run_logic_bot(
+            games=train_games, width=9, height=9, mines=10
         )
-        return runner.run()
-
-    def run_logic_bot(self, games: int):
-        """Runs the logic bot"""
-
-        runner = LogicBotRunner(games, self.width, self.height, self.mines)
-        return runner.run()
-
-    def compare_results(self, network_bot_results, logic_bot_results):
-        """Compares the results of the network bot and the logic bot"""
-
-        self.logger.info(f"Network Bot Results:\n{network_bot_results}")
-        self.logger.info(f"Logic Bot Results:\n{logic_bot_results}")
-
-    def train(self, network, alpha=0.001, epochs=10):
-        """Trains the network"""
-
-        train_dataset = MineSweeperDataset(
-            self.train_data["board_states"], self.train_data["revealed_states"]
-        )
-        test_dataset = MineSweeperDataset(
-            self.test_data["board_states"], self.test_data["revealed_states"]
+        self.logger.info("Generating easy testing data...")
+        easy_test_data = task.run_logic_bot(
+            games=test_games, width=9, height=9, mines=10
         )
 
-        train_loader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=64, shuffle=True
+        self.logger.info("Generating medium training data...")
+        medium_train_data = task.run_logic_bot(
+            games=train_games, width=16, height=16, mines=40
         )
-        test_loader = torch.utils.data.DataLoader(
-            test_dataset, batch_size=64, shuffle=False
-        )
-
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.logger.info(f"Using device: {device}")
-        network.to(device)
-
-        criterion = nn.BCELoss()
-        optimizer = optim.Adam(network.parameters(), lr=alpha)
-
-        train_losses, test_losses = [], []
-        train_accuracies, test_accuracies = [], []
-        elapsed_times = []
-
-        self.logger.info("Starting training for Task 1...")
-        self.logger.info(
-            f"# Parameters: {sum(p.numel() for p in network.parameters())}, Epochs: {epochs}, Alpha: {alpha}"
-            + f" # Train data: {len(train_loader.dataset)}, # Test data: {len(test_loader.dataset)}"
+        self.logger.info("Generating medium testing data...")
+        medium_test_data = task.run_logic_bot(
+            games=test_games, width=16, height=16, mines=40
         )
 
-        network.train()
-        for epoch in range(epochs):
-            start_time = time.time()
-
-            total_train_loss = total_train_correct = 0
-            for inputs, labels in train_loader:
-                inputs, labels = inputs.to(device).unsqueeze(1), labels.to(
-                    device
-                ).unsqueeze(1)
-
-                optimizer.zero_grad()
-                outputs = network(inputs)
-                loss = criterion(outputs, labels)
-                loss.backward()
-                optimizer.step()
-                total_train_loss += loss.item() * labels.size(0)
-                predicted = (outputs > 0.5).float()
-                total_train_correct += (predicted == labels).float().sum()
-
-            avg_train_loss = total_train_loss / len(train_loader.dataset)
-            train_losses.append(avg_train_loss)
-            train_accuracies.append(total_train_correct / len(train_loader.dataset))
-
-            network.eval()
-            total_test_loss = total_test_correct = 0
-            with torch.no_grad():
-                for inputs, labels in test_loader:
-                    inputs, labels = inputs.to(device).unsqueeze(1), labels.to(
-                        device
-                    ).unsqueeze(1)
-                    outputs = network(inputs)
-                    loss = criterion(outputs, labels)
-                    total_test_loss += loss.item() * labels.size(0)
-                    predicted = (outputs > 0.5).float()
-                    total_test_correct += (predicted == labels).float().sum()
-
-            avg_test_loss = total_test_loss / len(test_loader.dataset)
-            test_losses.append(avg_test_loss)
-            test_accuracies.append(total_test_correct / len(test_loader.dataset))
-
-            elapsed_times.append(time.time() - start_time)
-            self.logger.info(
-                f"Epoch {epoch + 1}/{epochs} completed with average train loss = {avg_train_loss}, average test loss = {avg_test_loss},"
-                + f" average train accuracy = {train_accuracies[-1]}, average test accuracy = {test_accuracies[-1]}, time elapsed = {elapsed_times[-1]} seconds"
-            )
-
-        return (
-            train_losses,
-            train_accuracies,
-            test_losses,
-            test_accuracies,
-            elapsed_times,
+        self.logger.info("Generating hard training data...")
+        hard_train_data = task.run_logic_bot(
+            games=train_games, width=30, height=16, mines=99
+        )
+        self.logger.info("Generating hard testing data...")
+        hard_test_data = task.run_logic_bot(
+            games=test_games, width=30, height=16, mines=99
         )
 
-    def load_data(self, file: str, games: int):
-        """Loads the data from the json file"""
+        self.data_loader.save(easy_train_data, "easy/train")
+        self.data_loader.save(easy_test_data, "easy/test")
 
-        self.logger.debug(f"Loading data from {file}...")
-        data = self.data_loader.load(file)
-        if not data:
-            data = self.data_loader.run_logic_bot(
-                file,
-                games,
-                self.width,
-                self.height,
-                self.mines,
-            )
+        self.data_loader.save(medium_train_data, "medium/train")
+        self.data_loader.save(medium_test_data, "medium/test")
+
+        self.data_loader.save(hard_train_data, "hard/train")
+        self.data_loader.save(hard_test_data, "hard/test")
+
+        data = {
+            "easy_train_data": easy_train_data,
+            "easy_test_data": easy_test_data,
+            "medium_train_data": medium_train_data,
+            "medium_test_data": medium_test_data,
+            "hard_train_data": hard_train_data,
+            "hard_test_data": hard_test_data,
+        }
+
         return data
 
-    def load_model(self, file: str):
-        """Loads the model from the file"""
+    def load_data(self):
+        """Loads the training data for easy, medium and hard games"""
 
-        return self.network.load_state_dict(torch.load(file))
+        self.logger.debug("Loading easy data...")
+        easy_train_data = self.data_loader.load("easy/train")
+        easy_test_data = self.data_loader.load("easy/test")
 
-    def save_model(self, network, file: str):
-        """Saves the model to the file"""
+        self.logger.debug("Loading medium data...")
+        medium_train_data = self.data_loader.load("medium/train")
+        medium_test_data = self.data_loader.load("medium/test")
 
-        torch.save(network.state_dict(), file)
+        self.logger.debug("Loading hard data...")
+        hard_train_data = self.data_loader.load("hard/train")
+        hard_test_data = self.data_loader.load("hard/test")
 
-    def plot(self, train_losses, test_losses, train_accuracies, test_accuracies):
-        """Plots the loss and accuracy graphs"""
+        return {
+            "easy_train_data": easy_train_data,
+            "easy_test_data": easy_test_data,
+            "medium_train_data": medium_train_data,
+            "medium_test_data": medium_test_data,
+            "hard_train_data": hard_train_data,
+            "hard_test_data": hard_test_data,
+        }
 
-        plt.figure(figsize=(10, 5))
-        plt.plot(range(1, len(train_losses) + 1), train_losses, label="Train Loss")
-        plt.plot(range(1, len(test_losses) + 1), test_losses, label="Test Loss")
-        plt.xlabel("Epoch")
-        plt.ylabel("Loss")
-        plt.legend()
-        plt.savefig(f"{base_dir}/graphs/task_1/loss.png")
+    def compare_bots(
+        self, network_bot_runner: NetworkBotRunner, logic_bot_runner: LogicBotRunner
+    ):
 
-        plt.figure(figsize=(10, 5))
-        plt.plot(
-            range(1, len(train_accuracies) + 1),
-            train_accuracies,
-            label="Train Accuracy",
-        )
-        plt.plot(
-            range(1, len(test_accuracies) + 1), test_accuracies, label="Test Accuracy"
-        )
-        plt.xlabel("Epoch")
-        plt.ylabel("Accuracy")
-        plt.legend()
-        plt.savefig(f"{base_dir}/graphs/task_1/accuracy.png")
+        pass
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-log")
     parser.add_argument("-train", action="store_true")
-    parser.add_argument("-train_data_file")
-    parser.add_argument("-test_data_file")
-    parser.add_argument("-train_games")
-    parser.add_argument("-test_games")
+    parser.add_argument("-get_data", action="store_true")
     parser.add_argument("-network_bot_games")
-    parser.add_argument("-width")
-    parser.add_argument("-height")
-    parser.add_argument("-mines")
 
     args = parser.parse_args()
     (
         log_level,
         train,
-        train_data_file,
-        test_data_file,
-        train_games,
-        test_games,
+        get_data,
         network_bot_games,
-        width,
-        height,
-        mines,
-    ) = (
-        args.log,
-        args.train,
-        args.train_data_file,
-        args.test_data_file,
-        args.train_games,
-        args.test_games,
-        args.network_bot_games,
-        args.width,
-        args.height,
-        args.mines,
-    )
+    ) = (args.log, args.train, args.get_data, args.network_bot_games)
 
     configure_logging(log_level)
 
-    task = Task1(
-        test_data_file=test_data_file,
-        train_data_file=train_data_file,
-        train_games=train_games,
-        test_games=test_games,
-        width=width,
-        height=height,
-        mines=mines,
-    )
+    task = Task1()
 
     if train:
-        training_network = Task1Network()
-        train_losses, train_accuracies, test_losses, test_accuracies, elapsed_times = (
-            task.train(network=training_network)
+        if get_data:
+            task.generate_data()
+
+        data = task.load_data()
+
+        easy_network = Network()
+        easy_train_data, easy_test_data = (
+            data["easy_train_data"],
+            data["easy_test_data"],
         )
-        task.save_model(training_network, f"{base_dir}/models/task_1/model.pt")
-        task.plot(train_losses, test_losses, train_accuracies, test_accuracies)
+        train_losses, train_accuracies, test_losses, test_accuracies, elapsed_times = (
+            task.train(
+                network=easy_network,
+                train_data=easy_train_data,
+                test_data=easy_test_data,
+                alpha=0.001,
+                epochs=10,
+                weight_decay=0.00001,
+            )
+        )
+        task.save_model(easy_network, f"{base_dir}/models/task_1/easy/model.pt")
+        task.plot(
+            train_losses,
+            test_losses,
+            train_accuracies,
+            test_accuracies,
+            directory="easy",
+        )
 
-    network = Task1Network()
-    network.load_state_dict(torch.load(f"{base_dir}/models/task_1/model.pt"))
+        medium_network = Network()
+        medium_train_data, medium_test_data = (
+            data["medium_train_data"],
+            data["medium_test_data"],
+        )
+        train_losses, train_accuracies, test_losses, test_accuracies, elapsed_times = (
+            task.train(
+                network=medium_network,
+                train_data=medium_train_data,
+                test_data=medium_test_data,
+                alpha=0.001,
+                epochs=10,
+                weight_decay=0.00001,
+            )
+        )
+        task.save_model(easy_network, f"{base_dir}/models/task_1/medium/model.pt")
+        task.plot(
+            train_losses,
+            test_losses,
+            train_accuracies,
+            test_accuracies,
+            directory="medium",
+        )
 
-    print("Running network bot...")
-    board_states, labels, moves, results, win_rate, average_turns = (
-        task.run_network_bot(network, network_bot_games)
+        hard_network = Network()
+        hard_train_data, hard_test_data = (
+            data["hard_train_data"],
+            data["hard_test_data"],
+        )
+        train_losses, train_accuracies, test_losses, test_accuracies, elapsed_times = (
+            task.train(
+                network=hard_network,
+                train_data=hard_train_data,
+                test_data=hard_test_data,
+                alpha=0.001,
+                epochs=10,
+                weight_decay=0.00001,
+            )
+        )
+        task.save_model(easy_network, f"{base_dir}/models/task_1/hard/model.pt")
+        task.plot(
+            train_losses,
+            test_losses,
+            train_accuracies,
+            test_accuracies,
+            directory="hard",
+        )
+
+    print("Loading easy network...")
+    easy_network = Network()
+    task.load_model(easy_network, f"{base_dir}/models/task_1/easy/model.pt")
+    print("Running easy network bot...")
+    results = task.run_network_bot(
+        easy_network, network_bot_games, width=9, height=9, mines=10
     )
-    print("Finished running network bot")
-    print(f"Win Rate: {win_rate}")
-    print(f"Average Turns: {average_turns}")
+    print("Finished running easy network bot!")
+    print(f"Win Rate: {results['win_rate']}")
+    print(f"Average Turns: {results['average_turns']}\n")
+
+    print("Loading medium network...")
+    medium_network = Network()
+    task.load_model(medium_network, f"{base_dir}/models/task_1/medium/model.pt")
+    print("Running medium network bot...")
+    results = task.run_network_bot(
+        medium_network, network_bot_games, width=16, height=16, mines=40
+    )
+    print("Finished running medium network bot!")
+    print(f"Win Rate: {results['win_rate']}")
+    print(f"Average Turns: {results['average_turns']}\n")
+
+    print("Loading hard network...")
+    hard_network = Network()
+    task.load_model(hard_network, f"{base_dir}/models/task_1/hard/model.pt")
+    print("Running hard network bot...")
+    results = task.run_network_bot(
+        hard_network, network_bot_games, width=30, height=16, mines=99
+    )
+    print("Finished running hard network bot!")
+    print("Finished running medium network bot!")
+    print(f"Win Rate: {results['win_rate']}")
+    print(f"Average Turns: {results['average_turns']}\n")

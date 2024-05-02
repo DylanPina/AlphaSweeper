@@ -25,7 +25,7 @@ class Task1DataLoader:
         file_path = f"{base_dir}/data/task_1/{file_name}.json"
         if not os.path.exists(file_path):
             self.logger.debug(f"Failed to load... {file_path} does not exist")
-            return None
+            ValueError(f"Failed to load... {file_path} does not exist")
 
         with open(f"{base_dir}/data/task_1/{file_name}.json", "rb") as f:
             data = json.load(f)
@@ -39,19 +39,7 @@ class Task1DataLoader:
 
         runner = LogicBotRunner(games, width, height, mines)
 
-        board_states, revealed_states, moves, results, win_rate, average_turns = (
-            runner.run()
-        )
-
-        logic_bot_data = {
-            "board_states": board_states,
-            "revealed_states": revealed_states,
-            "moves": moves,
-            "results": results,
-            "win_rate": win_rate,
-            "average_turns": average_turns,
-        }
-
+        logic_bot_data = runner.run()
         self.save(
             logic_bot_data,
             file,
