@@ -1,22 +1,34 @@
+from random import randint
 from game.minesweeper import Minesweeper
 from common.utils import GameResult
 from .logic_bot import LogicBot
-from common.config import close_logger, setup_logger, base_dir
+from common.config import close_logger, setup_logger
 
 
 class LogicBotRunner:
 
-    def __init__(self, games, width, height, mines, stop_on_hit=True):
+    def __init__(
+        self,
+        games: int,
+        width: int,
+        height: int,
+        mines: int | None,
+        task: str,
+        stop_on_hit=True,
+    ):
         self.games = games
         self.width = width
         self.height = height
         self.mines = mines
+        self.task = task
         self.stop_on_hit = stop_on_hit
         self.results = []
         self.moves = []
         self.board_states = []
         self.label_board = []
-        self.logger = setup_logger("Logic Bot", f"{base_dir}/logs/task_1/logic_bot.log")
+        self.logger = setup_logger(
+            name=f"{task} Logic Bot", task=task, log_file="logic_bot"
+        )
 
     def run(self):
         """Runs the logic bot and returns the results"""
@@ -27,13 +39,13 @@ class LogicBotRunner:
         for game_number in range(int(self.games)):
             self.logger.debug(f"Starting game #{game_number + 1}...")
 
-            game = Minesweeper(
-                int(self.width), int(self.height), int(self.mines), self.logger
-            )
+            mines = self.mines if self.mines else randint(10, 50)
+
+            game = Minesweeper(self.width, self.height, mines, self.logger)
             bot = LogicBot(game, self.logger)
 
             result, turn = None, 0
-            while turn < (int(self.width) * int(self.height)):
+            while turn < (self.width * self.height):
                 result = bot.play_turn(turn)
                 turn += 1
 

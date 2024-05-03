@@ -1,6 +1,6 @@
 import torch
 from common.utils import transform
-from tasks.task_1.network import Network
+from network.network import Network
 from game.minesweeper import Minesweeper
 
 
@@ -43,7 +43,10 @@ class NetworkBot:
         return int(row), int(col)
 
     def apply_mask(self, input: torch.Tensor, board: torch.Tensor):
-        """Applies a mask to the input tensor which prevents the bot from selecting cells that are set to 1 by assigning them a very high negative value (for minimization problems)."""
+        """
+        Applies a mask to the input tensor which prevents the bot from selecting cells that are set to 1
+        by assigning them a very high negative value (for minimization problems).
+        """
 
         mask = board != 1
         input[mask] = float("inf")

@@ -5,16 +5,17 @@ import time
 import matplotlib.pyplot as plt
 from bots.logic_bot.logic_bot_runner import LogicBotRunner
 from common.config import base_dir
-from tasks.task_1.dataset import MineSweeperDataset
-from tasks.task_1.network import Network
+from common.dataset import MineSweeperDataset
+from network.network import Network
 from bots.network_bot.network_bot_runner import NetworkBotRunner
 from abc import ABC, abstractmethod
 
 
 class Task(ABC):
 
-    def __init__(self, logger):
+    def __init__(self, logger, task: str):
         self.logger = logger
+        self.task = task
 
     @abstractmethod
     def generate_data(self, train_games=50000, test_games=10000):
@@ -25,12 +26,6 @@ class Task(ABC):
     @abstractmethod
     def load_data(self):
         """Loads the training data for easy, medium and hard games"""
-
-        ...
-
-    @abstractmethod
-    def compare_results(self, network_bot_results, logic_bot_results):
-        """Compares the results of the network bot and the logic bot"""
 
         ...
 
@@ -134,17 +129,24 @@ class Task(ABC):
         )
 
     def run_network_bot(
-        self, network: Network, games: int, width: int, height: int, mines: int
+        self,
+        network: Network,
+        games: int,
+        width: int,
+        height: int,
+        mines: int | None = None,
     ):
         """Runs the network bot"""
 
-        runner = NetworkBotRunner(network, games, width, height, mines)
+        runner = NetworkBotRunner(network, games, width, height, mines, task=self.task)
         return runner.run()
 
-    def run_logic_bot(self, games: int, width: int, height: int, mines: int):
+    def run_logic_bot(
+        self, games: int, width: int, height: int, mines: int | None = None
+    ):
         """Runs the logic bot"""
 
-        runner = LogicBotRunner(games, width, height, mines)
+        runner = LogicBotRunner(games, width, height, mines, task=self.task)
         return runner.run()
 
     def load_model(self, network: Network, file: str):
@@ -175,7 +177,7 @@ class Task(ABC):
         plt.xlabel("Epoch")
         plt.ylabel("Loss")
         plt.legend()
-        plt.savefig(f"{base_dir}/graphs/task_1/{directory}/loss.png")
+        plt.savefig(f"{base_dir}/graphs/{self.task}/{directory}/loss.png")
 
         plt.figure(figsize=(10, 5))
         plt.plot(
@@ -189,4 +191,4 @@ class Task(ABC):
         plt.xlabel("Epoch")
         plt.ylabel("Accuracy")
         plt.legend()
-        plt.savefig(f"{base_dir}/graphs/task_1/{directory}/accuracy.png")
+        plt.savefig(f"{base_dir}/graphs/{self.task}/{directory}/accuracy.png")

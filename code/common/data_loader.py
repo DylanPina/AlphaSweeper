@@ -1,28 +1,28 @@
-import logging
 import os
 import json
 from common.config import base_dir
 from bots.logic_bot.logic_bot_runner import LogicBotRunner
 
 
-class Task1DataLoader:
+class MineSweeperDataLoader:
 
-    def __init__(self):
-        self.logger = logging.getLogger("Task 1")
+    def __init__(self, logger, task: str):
+        self.logger = logger
+        self.task = task
 
-    def save(self, data, file_name):
+    def save(self, data, file_name: str):
         """Saves the data to a json file"""
 
-        with open(f"{base_dir}/data/task_1/{file_name}.json", "w") as f:
+        with open(f"{base_dir}/data/{self.task}/{file_name}.json", "w") as f:
             self.logger.info(
                 f"Saving {len(data['board_states'])} board states points to {file_name}.json"
             )
             json.dump(data, f)
 
-    def load(self, file_name: str = "task_1_data"):
+    def load(self, file_name: str):
         """Loads the data from a json file"""
 
-        file_path = f"{base_dir}/data/task_1/{file_name}.json"
+        file_path = f"{base_dir}/data/{self.task}/{file_name}.json"
         if not os.path.exists(file_path):
             self.logger.debug(f"Failed to load... {file_path} does not exist")
             ValueError(f"Failed to load... {file_path} does not exist")
@@ -34,10 +34,18 @@ class Task1DataLoader:
             )
             return data
 
-    def run_logic_bot(self, file: str, games: int, width: int, height: int, mines: int):
+    def run_logic_bot(
+        self,
+        file: str,
+        games: int,
+        width: int,
+        height: int,
+        mines: int | None,
+        task: str,
+    ):
         """Runs the logic bot and saves the results to a json file"""
 
-        runner = LogicBotRunner(games, width, height, mines)
+        runner = LogicBotRunner(games, width, height, mines, task)
 
         logic_bot_data = runner.run()
         self.save(

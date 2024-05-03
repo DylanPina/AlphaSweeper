@@ -1,9 +1,8 @@
 import argparse
-from code.bots.logic_bot.logic_bot_runner import LogicBotRunner
-from code.bots.network_bot.network_bot_runner import NetworkBotRunner
+import logging
 from common.config import base_dir, configure_logging, setup_logger
-from tasks.task_1.network import Network
-from tasks.task_1.data_loader import Task1DataLoader
+from network.network import Network
+from common.data_loader import MineSweeperDataLoader
 from .task import Task
 
 
@@ -12,9 +11,11 @@ class Task1(Task):
     def __init__(
         self,
     ):
-        super().__init__(setup_logger("Task 1", f"{base_dir}/logs/task_1/task_1.log"))
-        self.data_loader = Task1DataLoader()
-        self.logger = setup_logger("Task 1", f"{base_dir}/logs/task_1/task_1.log")
+        super().__init__(
+            setup_logger("Task 1", task="task_1", log_file="task_1"), task="task_1"
+        )
+        self.logger = logging.getLogger("Task 1")
+        self.data_loader = MineSweeperDataLoader(logger=self.logger, task="task_1")
 
     def generate_data(self, train_games=50000, test_games=10000):
         """Generates the training data for easy, medium and hard games"""
@@ -55,7 +56,7 @@ class Task1(Task):
         self.data_loader.save(hard_train_data, "hard/train")
         self.data_loader.save(hard_test_data, "hard/test")
 
-        data = {
+        return {
             "easy_train_data": easy_train_data,
             "easy_test_data": easy_test_data,
             "medium_train_data": medium_train_data,
@@ -63,8 +64,6 @@ class Task1(Task):
             "hard_train_data": hard_train_data,
             "hard_test_data": hard_test_data,
         }
-
-        return data
 
     def load_data(self):
         """Loads the training data for easy, medium and hard games"""
@@ -89,12 +88,6 @@ class Task1(Task):
             "hard_train_data": hard_train_data,
             "hard_test_data": hard_test_data,
         }
-
-    def compare_bots(
-        self, network_bot_runner: NetworkBotRunner, logic_bot_runner: LogicBotRunner
-    ):
-
-        pass
 
 
 if __name__ == "__main__":

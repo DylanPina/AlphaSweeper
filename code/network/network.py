@@ -4,7 +4,15 @@ import torch.nn.functional as F
 
 
 class ChannelAttention(nn.Module):
-    """Channel attention block"""
+    """
+    Implements channel attention mechanism as part of CBAM, focusing on inter-channel relationship.
+    It calculates attention weights based on the channel-wise global average and max pooling,
+    enabling the network to focus more on informative features.
+
+    Args:
+        num_channels (int): Number of input channels.
+        reduction_ratio (int): Reduction ratio to control the bottleneck size in the fully connected layers.
+    """
 
     def __init__(self, num_channels, reduction_ratio=16):
         super(ChannelAttention, self).__init__()
@@ -25,6 +33,12 @@ class ChannelAttention(nn.Module):
 
 
 class ChannelPool(nn.Module):
+    """
+    Performs channel-wise pooling by taking the maximum and average along the channel dimension,
+    creating a tensor with double the number of channels. This tensor is used in spatial attention to
+    provide a summarized feature map across channels.
+    """
+
     def forward(self, x):
         return torch.cat(
             (torch.max(x, 1)[0].unsqueeze(1), torch.mean(x, 1).unsqueeze(1)), dim=1
@@ -32,7 +46,22 @@ class ChannelPool(nn.Module):
 
 
 class BasicConv(nn.Module):
-    """Basic Conv Block with BatchNorm and ReLU"""
+    """
+    Basic convolutional block that includes a convolutional layer optionally followed by
+    batch normalization and a ReLU activation function.
+
+    Args:
+        in_planes (int): Number of input channels.
+        out_planes (int): Number of output channels.
+        kernel_size (int): Size of the convolution kernel.
+        stride (int): Stride of the convolution.
+        padding (int): Padding added to both sides of the input.
+        dilation (int): Spacing between kernel elements.
+        groups (int): Number of blocked connections from input channels to output channels.
+        relu (bool): If True, applies a ReLU activation after the convolution.
+        bn (bool): If True, applies batch normalization after the convolution.
+        bias (bool): If True, adds a learnable bias to the output.
+    """
 
     def __init__(
         self,
@@ -76,7 +105,14 @@ class BasicConv(nn.Module):
 
 
 class SpatialAttention(nn.Module):
-    """Spatial attention block"""
+    """
+    Implements spatial attention mechanism as part of CBAM, focusing on where to emphasize or suppress
+    features spatially. It uses a compressed feature map obtained by channel pooling and applies a convolution
+    to produce a spatial attention map.
+
+    Args:
+        kernel_size (int): Size of the convolution kernel used for spatial attention.
+    """
 
     def __init__(self, kernel_size=7):
         super(SpatialAttention, self).__init__()
@@ -94,6 +130,17 @@ class SpatialAttention(nn.Module):
 
 
 class CBAM(nn.Module):
+    """
+    CBAM module that sequentially applies channel and spatial attention mechanisms to an input feature map.
+    It enhances the representational power of the network by focusing on important features both channel-wise
+    and spatially.
+
+    Args:
+        num_channels (int): Number of channels in the input feature map.
+        reduction_ratio (int): Reduction ratio for the channel attention's fully connected layer.
+        attention_kernel_size (int): Kernel size for the spatial attention convolution.
+    """
+
     def __init__(self, num_channels, reduction_ratio=16, attention_kernel_size=7):
         super(CBAM, self).__init__()
         self.channel_attention = ChannelAttention(num_channels, reduction_ratio)
@@ -106,6 +153,18 @@ class CBAM(nn.Module):
 
 
 class ConvCBAMBlock(nn.Module):
+    """
+    Convolutional block equipped with CBAM, performing convolution followed by batch normalization,
+    ReLU activation, and CBAM attention. It serves as a fundamental building block for constructing
+    deeper architectures with attention mechanisms.
+
+    Args:
+        in_channels (int): Number of input channels to the convolutional layer.
+        out_channels (int): Number of output channels from the convolutional layer.
+        reduction_ratio (int): Reduction ratio used in the CBAM channel attention.
+        attention_kernel_size (int): Kernel size for the CBAM spatial attention.
+    """
+
     def __init__(
         self,
         in_channels=1,
@@ -130,6 +189,17 @@ class ConvCBAMBlock(nn.Module):
 
 
 class Network(nn.Module):
+    """
+    Defines a neural network with multiple ConvCBAM blocks and an embedding layer for input processing.
+    This architecture is suitable for tasks that benefit from attention mechanisms, like visual recognition
+    or in cases like Minesweeper for feature enhancement based on contextual importance.
+
+    Args:
+        num_embeddings (int): Number of unique embeddings, e.g., different states in Minesweeper.
+        embedding_dim (int): Dimensionality of each embedding.
+        cbam_channels (int): Number of channels in the CBAM blocks.
+    """
+
     def __init__(self, num_embeddings=11, embedding_dim=4, cbam_channels=128):
         super(Network, self).__init__()
         self.embedding = nn.Embedding(num_embeddings, embedding_dim)

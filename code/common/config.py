@@ -2,12 +2,6 @@ import os
 import logging
 
 
-difficulty_levels = {
-    "EASY": (9, 9, 10),
-    "MEDIUM": (16, 16, 40),
-    "HARD": (30, 16, 99),
-}
-
 base_dir = f"{os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))}/code"
 
 
@@ -25,10 +19,10 @@ def configure_logging(log_level: str):
     logging.basicConfig(level=log_levels[log_level], handlers=[logging.NullHandler()])
 
 
-def setup_logger(name, log_file):
+def setup_logger(name: str, task: str, log_file: str):
     """Returns a configured logger"""
 
-    handler = logging.FileHandler(log_file, mode="a")
+    handler = logging.FileHandler(f"{base_dir}/logs/{task}/{log_file}.log", mode="a")
     handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
 
     logger = logging.getLogger(name)

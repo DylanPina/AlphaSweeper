@@ -1,41 +1,51 @@
-from common.config import close_logger, setup_logger, base_dir
+from network.network import Network
+from common.config import close_logger, setup_logger
 from game.minesweeper import Minesweeper
 from .network_bot import NetworkBot
 from common.utils import GameResult
+from random import randint
 
 
 class NetworkBotRunner:
 
-    def __init__(self, network, games, width, height, mines):
+    def __init__(
+        self,
+        network: Network,
+        games: int,
+        width: int,
+        height: int,
+        mines: int | None,
+        task: str,
+    ):
         self.network = network
         self.games = games
         self.width = width
         self.height = height
         self.mines = mines
+        self.task = task
         self.results = []
         self.moves = []
         self.board_states = []
         self.label_board = []
         self.logger = setup_logger(
-            "Network Bot", f"{base_dir}/logs/task_1/network_bot.log"
+            f"{task} Network Bot", task=task, log_file="network_bot"
         )
 
     def run(self):
         """Runs the network bot and returns the results"""
 
-        self.logger.info(f"Running logic bot with {self.games} games")
-        self.logger.info(f"Board: {self.width}x{self.height} with {self.mines} mines")
+        self.logger.info(f"Running network bot with {self.games} games")
 
         for game_number in range(int(self.games)):
             self.logger.debug(f"Starting game #{game_number + 1}...")
 
-            game = Minesweeper(
-                int(self.width), int(self.height), int(self.mines), self.logger
-            )
+            mines = self.mines if self.mines else randint(0, 270)
+
+            game = Minesweeper(self.width, self.height, mines, self.logger)
             bot = NetworkBot(self.network, game, self.logger)
 
             result, turn = None, 0
-            while turn < (int(self.width) * int(self.height)):
+            while turn < (self.width * self.height):
                 result = bot.play_turn(turn)
                 turn += 1
 
