@@ -41,7 +41,11 @@ class LogicBotRunner:
         for game_number in range(int(self.games)):
             self.logger.info(f"Starting game #{game_number + 1}...")
 
-            mines = self.mines if self.mines else randint(1, 270)
+            mines = (
+                self.mines
+                if self.mines
+                else randint(0, int((self.width * self.height) * 0.20))
+            )
 
             game = Minesweeper(self.width, self.height, mines, self.logger)
             bot = LogicBot(game, self.logger)
