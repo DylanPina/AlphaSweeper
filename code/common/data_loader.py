@@ -27,7 +27,7 @@ class MineSweeperDataLoader:
             self.logger.debug(f"Failed to load... {file_path} does not exist")
             ValueError(f"Failed to load... {file_path} does not exist")
 
-        with open(f"{base_dir}/data/task_1/{file_name}.json", "rb") as f:
+        with open(f"{base_dir}/data/{self.task}/{file_name}.json", "rb") as f:
             data = json.load(f)
             self.logger.info(
                 f"Loading {len(data['board_states'])} board states from {file_name}.json"

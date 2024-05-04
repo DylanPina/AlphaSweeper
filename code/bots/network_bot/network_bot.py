@@ -14,7 +14,7 @@ class NetworkBot:
         """Plays a turn and returns the result"""
 
         row, col = self.get_next_move(turn_number)
-        self.logger.info(f"Turn {turn_number + 1} - Selected cell: ({row}, {col})")
+        self.logger.debug(f"Turn {turn_number + 1} - Selected cell: ({row}, {col})")
 
         return self.game.play_turn((row, col))
 

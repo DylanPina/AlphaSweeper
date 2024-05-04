@@ -34,12 +34,14 @@ class NetworkBotRunner:
     def run(self):
         """Runs the network bot and returns the results"""
 
-        self.logger.info(f"Running network bot with {self.games} games")
+        self.logger.info(
+            f"Board: {self.width}x{self.height} with {self.mines if self.mines else 'random number of '} mines"
+        )
 
         for game_number in range(int(self.games)):
-            self.logger.debug(f"Starting game #{game_number + 1}...")
+            self.logger.info(f"Starting game #{game_number + 1}...")
 
-            mines = self.mines if self.mines else randint(0, 270)
+            mines = self.mines if self.mines else randint(1, 270)
 
             game = Minesweeper(self.width, self.height, mines, self.logger)
             bot = NetworkBot(self.network, game, self.logger)

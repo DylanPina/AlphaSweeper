@@ -1,3 +1,3 @@
 #!/bin/bash
 
-python task_1.py -log "DEBUG" -train -get_data -network_bot_games 100 
+python task_1.py -log "INFO" -games 10000 

@@ -3,7 +3,7 @@ import logging
 from common.config import base_dir, configure_logging, setup_logger
 from network.network import Network
 from common.data_loader import MineSweeperDataLoader
-from .task import Task
+from task import Task
 
 
 class Task2(Task):
@@ -17,7 +17,7 @@ class Task2(Task):
         self.logger = logging.getLogger("Task 2")
         self.data_loader = MineSweeperDataLoader(self.logger, task="task_2")
 
-    def generate_data(self, train_games=50000, test_games=10000):
+    def generate_data(self, train_games=10000, test_games=2000):
         """Generates the training data for games with random number of mines"""
 
         self.logger.info("Loading task 1 network...")
@@ -100,15 +100,15 @@ if __name__ == "__main__":
     parser.add_argument("-log")
     parser.add_argument("-train", action="store_true")
     parser.add_argument("-get_data", action="store_true")
-    parser.add_argument("-network_bot_games")
+    parser.add_argument("-games")
 
     args = parser.parse_args()
     (
         log_level,
         train,
         get_data,
-        network_bot_games,
-    ) = (args.log, args.train, args.get_data, args.network_bot_games)
+        games,
+    ) = (args.log, args.train, args.get_data, args.games)
 
     configure_logging(log_level)
 
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     network = Network()
     task.load_model(network, f"{base_dir}/models/task_2/model.pt")
     print("Running network bot...")
-    results = task.run_network_bot(network, network_bot_games, width=30, height=30)
+    results = task.run_network_bot(network, games, width=30, height=30)
     print("Finished running easy network bot!")
     print(f"Win Rate: {results['win_rate']}")
     print(f"Average Turns: {results['average_turns']}\n")

@@ -3,7 +3,7 @@ import logging
 from common.config import base_dir, configure_logging, setup_logger
 from network.network import Network
 from common.data_loader import MineSweeperDataLoader
-from .task import Task
+from task import Task
 
 
 class Task1(Task):
@@ -95,15 +95,15 @@ if __name__ == "__main__":
     parser.add_argument("-log")
     parser.add_argument("-train", action="store_true")
     parser.add_argument("-get_data", action="store_true")
-    parser.add_argument("-network_bot_games")
+    parser.add_argument("-games")
 
     args = parser.parse_args()
     (
         log_level,
         train,
         get_data,
-        network_bot_games,
-    ) = (args.log, args.train, args.get_data, args.network_bot_games)
+        games,
+    ) = (args.log, args.train, args.get_data, args.games)
 
     configure_logging(log_level)
 
@@ -187,36 +187,51 @@ if __name__ == "__main__":
             directory="hard",
         )
 
+    # Easy
     print("Loading easy network...")
     easy_network = Network()
     task.load_model(easy_network, f"{base_dir}/models/task_1/easy/model.pt")
     print("Running easy network bot...")
-    results = task.run_network_bot(
-        easy_network, network_bot_games, width=9, height=9, mines=10
-    )
+    results = task.run_network_bot(easy_network, games, width=9, height=9, mines=10)
     print("Finished running easy network bot!")
     print(f"Win Rate: {results['win_rate']}")
     print(f"Average Turns: {results['average_turns']}\n")
 
+    print("Running easy logic bot...")
+    results = task.run_logic_bot(games=games, width=9, height=9, mines=10)
+    print("Finished running easy logic bot!")
+    print(f"Win Rate: {results['win_rate']}")
+    print(f"Average Turns: {results['average_turns']}\n\n")
+
+    # Medium
     print("Loading medium network...")
     medium_network = Network()
     task.load_model(medium_network, f"{base_dir}/models/task_1/medium/model.pt")
     print("Running medium network bot...")
-    results = task.run_network_bot(
-        medium_network, network_bot_games, width=16, height=16, mines=40
-    )
+    results = task.run_network_bot(medium_network, games, width=16, height=16, mines=40)
     print("Finished running medium network bot!")
     print(f"Win Rate: {results['win_rate']}")
     print(f"Average Turns: {results['average_turns']}\n")
 
+    print("Running medium logic bot...")
+    results = task.run_logic_bot(games=games, width=16, height=16, mines=40)
+    print("Finished running medium logic bot!")
+    print(f"Win Rate: {results['win_rate']}")
+    print(f"Average Turns: {results['average_turns']}\n\n")
+
+    # Hard
     print("Loading hard network...")
     hard_network = Network()
     task.load_model(hard_network, f"{base_dir}/models/task_1/hard/model.pt")
     print("Running hard network bot...")
-    results = task.run_network_bot(
-        hard_network, network_bot_games, width=30, height=16, mines=99
-    )
+    results = task.run_network_bot(hard_network, games, width=30, height=16, mines=99)
     print("Finished running hard network bot!")
     print("Finished running medium network bot!")
     print(f"Win Rate: {results['win_rate']}")
     print(f"Average Turns: {results['average_turns']}\n")
+
+    print("Running hard logic bot...")
+    results = task.run_logic_bot(games=games, width=30, height=16, mines=99)
+    print("Finished running hard logic bot!")
+    print(f"Win Rate: {results['win_rate']}")
+    print(f"Average Turns: {results['average_turns']}\n\n")
